@@ -1,110 +1,65 @@
 from __future__ import annotations
 
-from pathlib import Path
-from typing import TYPE_CHECKING, Any, Protocol, overload
+import abc
+from typing import TYPE_CHECKING
+
+from archivefile._utils import realpath
 
 if TYPE_CHECKING:
-    from types import TracebackType
+    from collections.abc import Iterable, Iterator
+    from pathlib import Path
 
-    from archivefile._enums import CompressionType
+    from typing_extensions import Self
+
     from archivefile._models import ArchiveMember
-    from archivefile._types import (
-        CollectionOf,
-        CompressionLevel,
-        ErrorHandler,
-        OpenArchiveMode,
-        SortBy,
-        StrPath,
-        TableStyle,
-        TreeStyle,
-    )
-    from typing_extensions import Generator, Self
+    from archivefile._types import ErrorHandler, StrPath
 
 
-class BaseArchiveAdapter(Protocol):
+class BaseArchiveAdapter(abc.ABC):
     """
     A base protocol that can be inherited from to implement more adapters.
     Refer to `src/archivefile/_core.py` for documentation of every method and property.
     """
 
-    # fmt: off
-    @overload
-    def __init__(self, file: StrPath, mode: OpenArchiveMode = "r", *, password: str | None = None, compression_type: CompressionType | None = None, compression_level: CompressionLevel | None = None, **kwargs: Any) -> None: ...
-
-    @overload
-    def __init__(self, file: StrPath, mode: OpenArchiveMode = "r", *, password: str | None = None, compression_type: CompressionType | None = None, compression_level: int | None = None, **kwargs: Any) -> None: ...
-
-    @overload
-    def __init__(self, file: StrPath, mode: str = "r", *, password: str | None = None, compression_type: CompressionType | None = None, compression_level: CompressionLevel | None = None, **kwargs: Any) -> None: ...
-
-    @overload
-    def __init__(self, file: StrPath, mode: str = "r", *, password: str | None = None, compression_type: CompressionType | None = None, compression_level: int | None = None, **kwargs: Any) -> None: ...
-    # fmt: on
-
-    def __init__(
-        self,
-        file: StrPath,
-        mode: OpenArchiveMode | str = "r",
-        *,
-        password: str | None = None,
-        compression_type: CompressionType | None = None,
-        compression_level: CompressionLevel | int | None = None,
-        **kwargs: Any,
-    ) -> None: ...
-
-    def __enter__(self) -> Self: ...
-
-    def __exit__(
-        self, type: type[BaseException] | None, value: BaseException | None, traceback: TracebackType | None
-    ) -> None: ...
+    def __init__(self, file: StrPath, *, password: str | None = None) -> None:
+        self._file = realpath(file)
+        self._password = password
 
     @property
-    def file(self) -> Path: ...
+    def file(self) -> Path:
+        return self._file
 
     @property
-    def mode(self) -> OpenArchiveMode: ...
+    def password(self) -> str | None:
+        return self._password
 
-    @property
-    def password(self) -> str | None: ...
+    def __enter__(self) -> Self:
+        return self
 
-    @property
-    def compression_type(self) -> CompressionType | None: ...
+    def __exit__(self, *args: object) -> None:
+        self.close()
 
-    @property
-    def compression_level(self) -> CompressionLevel | None: ...
-
-    @property
-    def adapter(self) -> str: ...
-
+    @abc.abstractmethod
     def get_member(self, member: StrPath | ArchiveMember) -> ArchiveMember: ...
 
-    def get_members(self) -> Generator[ArchiveMember]: ...
+    @abc.abstractmethod
+    def get_members(self) -> Iterator[ArchiveMember]: ...
 
+    @abc.abstractmethod
     def get_names(self) -> tuple[str, ...]: ...
 
-    def print_tree(
-        self,
-        *,
-        max_depth: int = 0,
-        style: TreeStyle = "const",
-    ) -> None: ...
+    @abc.abstractmethod
+    def extract(self, member: StrPath | ArchiveMember, *, destination: StrPath | None = None) -> Path: ...
 
-    def print_table(
-        self,
-        *,
-        title: str | None = None,
-        style: TableStyle = "markdown",
-        sort_by: SortBy = "name",
-        descending: bool = False,
-        **kwargs: Any,
-    ) -> None: ...
-
-    def extract(self, member: StrPath | ArchiveMember, *, destination: StrPath = Path.cwd()) -> Path: ...
-
+    @abc.abstractmethod
     def extractall(
-        self, *, destination: StrPath = Path.cwd(), members: CollectionOf[StrPath | ArchiveMember] | None = None
+        self,
+        *,
+        destination: StrPath | None = None,
+        members: Iterable[StrPath | ArchiveMember] | None = None,
     ) -> Path: ...
 
+    @abc.abstractmethod
     def read_bytes(self, member: StrPath | ArchiveMember) -> bytes: ...
 
     def read_text(
@@ -113,40 +68,15 @@ class BaseArchiveAdapter(Protocol):
         *,
         encoding: str = "utf-8",
         errors: ErrorHandler = "strict",
-    ) -> str: ...
+    ) -> str:
+        return self.read_bytes(member).decode(encoding=encoding, errors=errors)
 
-    def write(
-        self,
-        file: StrPath,
-        *,
-        arcname: StrPath | None = None,
-    ) -> None: ...
-
-    def write_text(
-        self,
-        data: str,
-        *,
-        arcname: StrPath,
-    ) -> None: ...
-
-    def write_bytes(
-        self,
-        data: bytes,
-        *,
-        arcname: StrPath,
-    ) -> None: ...
-
-    def writeall(
-        self,
-        dir: StrPath,
-        *,
-        root: StrPath | None = None,
-        glob: str = "*",
-        recursive: bool = True,
-    ) -> None: ...
-
+    @abc.abstractmethod
     def close(self) -> None: ...
 
     def __repr__(self) -> str:
-        password = '"********"' if self.password else None
-        return f'{self.__class__.__name__}("{self.file}", "{self.mode}", password={password})'
+        file = self.file.as_posix()
+        cls = self.__class__.__name__
+        if self.password:
+            return f"{cls}({file!r}, password='********')"
+        return f"{cls}({file!r})"
