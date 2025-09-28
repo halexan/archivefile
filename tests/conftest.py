@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
 from importlib.util import find_spec
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
 from archivefile import ArchiveFile
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 NO_PY7ZR = find_spec("py7zr") is None
 NO_RARFILE = find_spec("rarfile") is None
