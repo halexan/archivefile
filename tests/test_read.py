@@ -2,12 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from archivefile import ArchiveFile
-
-from .helpers import file_parametrizer
-
 if TYPE_CHECKING:
-    from pathlib import Path
+    from archivefile import ArchiveFile
 
 unlicense = """\
 This is free and unencumbered software released into the public domain.
@@ -37,29 +33,21 @@ For more information, please refer to <https://unlicense.org>
 """
 
 
-@file_parametrizer
-def test_read_text_file(file: Path) -> None:
-    with ArchiveFile(file) as archive:
-        member = archive.read_text("pyanilist-main/UNLICENSE")
-        assert member.strip() == unlicense.strip()
+def test_read_text_file(archive_file: ArchiveFile) -> None:
+    member = archive_file.read_text("pyanilist-main/UNLICENSE")
+    assert member.strip() == unlicense.strip()
 
 
-@file_parametrizer
-def test_read_bytes_file(file: Path) -> None:
-    with ArchiveFile(file) as archive:
-        member = archive.read_bytes("pyanilist-main/UNLICENSE")
-        assert member.decode().strip() == unlicense.strip()
+def test_read_bytes_file(archive_file: ArchiveFile) -> None:
+    member = archive_file.read_bytes("pyanilist-main/UNLICENSE")
+    assert member.decode().strip() == unlicense.strip()
 
 
-@file_parametrizer
-def test_read_text_folder(file: Path) -> None:
-    with ArchiveFile(file) as archive:
-        member = archive.read_text("pyanilist-main/src/")
-        assert member == ""
+def test_read_text_folder(archive_file: ArchiveFile) -> None:
+    member = archive_file.read_text("pyanilist-main/src/")
+    assert member == ""
 
 
-@file_parametrizer
-def test_read_bytes_folder(file: Path) -> None:
-    with ArchiveFile(file) as archive:
-        member = archive.read_bytes("pyanilist-main/src/")
-        assert member == b""
+def test_read_bytes_folder(archive_file: ArchiveFile) -> None:
+    member = archive_file.read_bytes("pyanilist-main/src/")
+    assert member == b""

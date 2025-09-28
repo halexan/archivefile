@@ -1,53 +1,43 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 from uuid import uuid4
 from zipfile import ZipFile
 
-from archivefile import ArchiveFile
-
-from .helpers import file_parametrizer
-
-
-@file_parametrizer
-def test_extract(file: Path, tmp_path: Path) -> None:
-    with ArchiveFile(file) as archive:
-        member = archive.extract("pyanilist-main/README.md", destination=tmp_path)
-        assert member.is_file()
+if TYPE_CHECKING:
+    from archivefile import ArchiveFile
 
 
-@file_parametrizer
-def test_extract_without_context_manager(file: Path, tmp_path: Path) -> None:
-    archive = ArchiveFile(file)
-    extracted_file = archive.extract("pyanilist-main/README.md", destination=tmp_path)
-    archive.close()
+def test_extract(archive_file: ArchiveFile, tmp_path: Path) -> None:
+    member = archive_file.extract("pyanilist-main/README.md", destination=tmp_path)
+    assert member.is_file()
+
+
+def test_extract_without_context_manager(archive_file: ArchiveFile, tmp_path: Path) -> None:
+    extracted_file = archive_file.extract("pyanilist-main/README.md", destination=tmp_path)
     assert extracted_file.is_file()
 
 
-@file_parametrizer
-def test_extract_by_member(file: Path, tmp_path: Path) -> None:
-    with ArchiveFile(file) as archive:
-        member = next(member for member in archive.get_members() if member.is_file)
-        outfile = archive.extract(member, destination=tmp_path)
-        assert outfile.is_file()
+def test_extract_by_member(archive_file: ArchiveFile, tmp_path: Path) -> None:
+    member = next(member for member in archive_file.get_members() if member.is_file)
+    outfile = archive_file.extract(member, destination=tmp_path)
+    assert outfile.is_file()
 
 
-@file_parametrizer
-def test_extractall(file: Path, tmp_path: Path) -> None:
+def test_extractall(archive_file: ArchiveFile, tmp_path: Path) -> None:
     with ZipFile("tests/test_data/source_LZMA.zip") as archive:
         dest = tmp_path / uuid4().hex
         archive.extractall(path=dest)
         control = tuple((dest / "pyanilist-main").rglob("*"))
 
-    with ArchiveFile(file) as archive:
-        dest2 = tmp_path / uuid4().hex
-        archive.extractall(destination=dest2)
-        members = tuple((dest / "pyanilist-main").rglob("*"))
-        assert control == members
+    dest2 = tmp_path / uuid4().hex
+    archive_file.extractall(destination=dest2)
+    members = tuple((dest / "pyanilist-main").rglob("*"))
+    assert control == members
 
 
-@file_parametrizer
-def test_extractall_by_members(file: Path, tmp_path: Path) -> None:
+def test_extractall_by_members(archive_file: ArchiveFile, tmp_path: Path) -> None:
     expected = [
         "pyanilist-main/.gitignore",
         "pyanilist-main/.pre-commit-config.yaml",
@@ -62,7 +52,6 @@ def test_extractall_by_members(file: Path, tmp_path: Path) -> None:
         "pyanilist-main/pyproject.toml",
     ]
 
-    with ArchiveFile(file) as archive:
-        folder = archive.extractall(destination=tmp_path, members=members) / "pyanilist-main"
-        assert len(members) == len(tuple(folder.rglob("*"))) == 4
-        assert sorted(expected) == sorted([member.relative_to(tmp_path).as_posix() for member in folder.rglob("*")])
+    folder = archive_file.extractall(destination=tmp_path, members=members) / "pyanilist-main"
+    assert len(members) == len(tuple(folder.rglob("*"))) == 4
+    assert sorted(expected) == sorted([member.relative_to(tmp_path).as_posix() for member in folder.rglob("*")])

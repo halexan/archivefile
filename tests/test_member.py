@@ -2,78 +2,55 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from archivefile import ArchiveFile
-
-from .helpers import file_parametrizer
-
 if TYPE_CHECKING:
-    from pathlib import Path
+    from archivefile import ArchiveFile
 
 
-@file_parametrizer
-def test_get_members(file: Path) -> None:
-    with ArchiveFile(file) as archive:
-        assert len(tuple(archive.get_members())) == 53
+def test_get_members(archive_file: ArchiveFile) -> None:
+    assert len(tuple(archive_file.get_members())) == 53
 
 
-@file_parametrizer
-def test_get_members_without_context_manager(file: Path) -> None:
-    archive = ArchiveFile(file)
-    total_members = len(tuple(archive.get_members()))
-    archive.close()
+def test_get_members_without_context_manager(archive_file: ArchiveFile) -> None:
+    total_members = len(tuple(archive_file.get_members()))
     assert total_members == 53
 
 
-@file_parametrizer
-def test_get_names(file: Path) -> None:
-    with ArchiveFile(file) as archive:
-        assert len(archive.get_names()) == 53
+def test_get_names(archive_file: ArchiveFile) -> None:
+    assert len(archive_file.get_names()) == 53
 
 
-@file_parametrizer
-def test_get_names_without_context_manager(file: Path) -> None:
-    archive = ArchiveFile(file)
-    total_members = len(archive.get_names())
-    archive.close()
+def test_get_names_without_context_manager(archive_file: ArchiveFile) -> None:
+    total_members = len(archive_file.get_names())
     assert total_members == 53
 
 
-@file_parametrizer
-def test_member_and_names(file: Path) -> None:
-    with ArchiveFile(file) as archive:
-        names = tuple([member.name for member in archive.get_members()])
-        assert archive.get_names() == names
+def test_member_and_names(archive_file: ArchiveFile) -> None:
+    names = tuple([member.name for member in archive_file.get_members()])
+    assert archive_file.get_names() == names
 
 
-@file_parametrizer
-def test_members_and_names_without_context_manager(file: Path) -> None:
-    archive = ArchiveFile(file)
-    names = tuple([member.name for member in archive.get_members()])
-    assert archive.get_names() == names
-    archive.close()
+def test_members_and_names_without_context_manager(archive_file: ArchiveFile) -> None:
+    names = tuple([member.name for member in archive_file.get_members()])
+    assert archive_file.get_names() == names
 
 
-@file_parametrizer
-def test_get_member_files(file: Path) -> None:
-    with ArchiveFile(file) as archive:
-        assert archive.file == file.resolve()
-        assert archive.password is None
+def test_get_member_files(archive_file: ArchiveFile) -> None:
+    assert archive_file.file == archive_file.file.resolve()
+    assert archive_file.password is None
 
-        member = archive.get_member("pyanilist-main/README.md")
-        assert member.name == "pyanilist-main/README.md"
-        assert member.size == 3799
-        assert member.is_dir is False
-        assert member.is_file is True
+    member = archive_file.get_member("pyanilist-main/README.md")
+    assert member.name == "pyanilist-main/README.md"
+    assert member.size == 3799
+    assert member.is_dir is False
+    assert member.is_file is True
 
 
-@file_parametrizer
-def test_get_member_dirs(file: Path) -> None:
-    with ArchiveFile(file) as archive:
-        assert archive.file == file.resolve()
-        assert archive.password is None
+def test_get_member_dirs(archive_file: ArchiveFile) -> None:
+    assert archive_file.file == archive_file.file.resolve()
+    assert archive_file.password is None
 
-        member = archive.get_member("pyanilist-main/docs/")
-        assert member.size == 0
-        assert member.compressed_size == 0
-        assert member.is_dir is True
-        assert member.is_file is False
+    member = archive_file.get_member("pyanilist-main/docs/")
+    assert member.size == 0
+    assert member.compressed_size == 0
+    assert member.is_dir is True
+    assert member.is_file is False
