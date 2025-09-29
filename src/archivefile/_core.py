@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
     from typing_extensions import Self
 
-    from archivefile._adapters._base import BaseArchiveAdapter
+    from archivefile._adapters._abc import AbstractArchiveFile
     from archivefile._models import ArchiveMember
     from archivefile._types import ErrorHandler, StrPath
 
@@ -48,7 +48,7 @@ class ArchiveFile:
         - [`SevenZipFile`][py7zr.SevenZipFile] - requires `archivefile[7z]`
 
         """
-        adapter: type[BaseArchiveAdapter]
+        adapter: type[AbstractArchiveFile]
 
         if is_zipfile(file):
             adapter = ZipFileAdapter

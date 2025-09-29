@@ -9,7 +9,7 @@ from zipfile import is_zipfile
 from archivefile._models import ArchiveMember
 
 if TYPE_CHECKING:
-    from archivefile._types import StrPath
+    from archivefile._types import MemberLike, StrPath
 
 
 def is_7zfile(file: StrPath) -> bool:
@@ -71,21 +71,22 @@ def is_archive(file: StrPath) -> bool:
     return is_tarfile(file) or is_zipfile(file) or is_7zfile(file) or is_rarfile(file)
 
 
-def get_member_name(member: StrPath | ArchiveMember) -> str:
+def get_member_name(member: MemberLike, /) -> str:
     """Get the member name from a string, path, or ArchiveMember."""
 
     match member:
+        case str():
+            return member
+
         case ArchiveMember():
             return member.name
 
         case os.PathLike():
             return Path(member).as_posix()
 
-        case str():
-            return member
         case _:
             msg = (
-                f"Unsupported type for 'member'. Expected 'str', 'Path', or 'ArchiveMember', "
-                f"but got '{type(member).__name__}'."
+                f"Unsupported type for 'member'. Expected 'str', 'PathLike', or 'ArchiveMember', "
+                f"but got {type(member).__name__!r}."
             )
             raise TypeError(msg)

@@ -12,18 +12,14 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
     from archivefile._models import ArchiveMember
-    from archivefile._types import ErrorHandler, StrPath
+    from archivefile._types import ErrorHandler, MemberLike, StrPath
 
 
-class BaseArchiveAdapter(abc.ABC):
-    """
-    A base protocol that can be inherited from to implement more adapters.
-    Refer to `src/archivefile/_core.py` for documentation of every method and property.
-    """
-
+class AbstractArchiveFile(abc.ABC):
     def __init__(self, file: StrPath, *, password: str | None = None) -> None:
         self._file = realpath(file)
         self._password = password
+        super().__init__()
 
     @property
     def file(self) -> Path:
@@ -40,7 +36,7 @@ class BaseArchiveAdapter(abc.ABC):
         self.close()
 
     @abc.abstractmethod
-    def get_member(self, member: StrPath | ArchiveMember) -> ArchiveMember: ...
+    def get_member(self, member: MemberLike) -> ArchiveMember: ...
 
     @abc.abstractmethod
     def get_members(self) -> Iterator[ArchiveMember]: ...
@@ -49,22 +45,22 @@ class BaseArchiveAdapter(abc.ABC):
     def get_names(self) -> tuple[str, ...]: ...
 
     @abc.abstractmethod
-    def extract(self, member: StrPath | ArchiveMember, *, destination: StrPath | None = None) -> Path: ...
+    def extract(self, member: MemberLike, *, destination: StrPath | None = None) -> Path: ...
 
     @abc.abstractmethod
     def extractall(
         self,
         *,
         destination: StrPath | None = None,
-        members: Iterable[StrPath | ArchiveMember] | None = None,
+        members: Iterable[MemberLike] | None = None,
     ) -> Path: ...
 
     @abc.abstractmethod
-    def read_bytes(self, member: StrPath | ArchiveMember) -> bytes: ...
+    def read_bytes(self, member: MemberLike) -> bytes: ...
 
     def read_text(
         self,
-        member: StrPath | ArchiveMember,
+        member: MemberLike,
         *,
         encoding: str = "utf-8",
         errors: ErrorHandler = "strict",

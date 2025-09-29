@@ -5,23 +5,23 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from zipfile import ZipFile
 
-from archivefile._adapters._base import BaseArchiveAdapter
+from archivefile._adapters._abc import AbstractArchiveFile
 from archivefile._models import ArchiveMember
 from archivefile._utils import get_member_name, realpath
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
-    from archivefile._types import StrPath
+    from archivefile._types import MemberLike, StrPath
 
 
-class ZipFileAdapter(BaseArchiveAdapter):
+class ZipFileAdapter(AbstractArchiveFile):
     def __init__(self, file: StrPath, *, password: str | None = None) -> None:
         super().__init__(file, password=password)
         self._encoded_password = password.encode() if password else None
         self._zipfile = ZipFile(self.file)
 
-    def get_member(self, member: StrPath | ArchiveMember) -> ArchiveMember:
+    def get_member(self, member: MemberLike) -> ArchiveMember:
         name = get_member_name(member)
         zipinfo = self._zipfile.getinfo(name)
 
@@ -48,7 +48,7 @@ class ZipFileAdapter(BaseArchiveAdapter):
     def get_names(self) -> tuple[str, ...]:
         return tuple(self._zipfile.namelist())
 
-    def extract(self, member: StrPath | ArchiveMember, *, destination: StrPath | None = None) -> Path:
+    def extract(self, member: MemberLike, *, destination: StrPath | None = None) -> Path:
         destination = realpath(destination) if destination else Path.cwd()
         destination.mkdir(parents=True, exist_ok=True)
 
@@ -61,7 +61,7 @@ class ZipFileAdapter(BaseArchiveAdapter):
         self,
         *,
         destination: StrPath | None = None,
-        members: Iterable[StrPath | ArchiveMember] | None = None,
+        members: Iterable[MemberLike] | None = None,
     ) -> Path:
         destination = realpath(destination) if destination else Path.cwd()
         destination.mkdir(parents=True, exist_ok=True)
@@ -74,7 +74,7 @@ class ZipFileAdapter(BaseArchiveAdapter):
 
         return destination
 
-    def read_bytes(self, member: StrPath | ArchiveMember) -> bytes:
+    def read_bytes(self, member: MemberLike) -> bytes:
         name = get_member_name(member)
         return self._zipfile.read(name, pwd=self._encoded_password)
 

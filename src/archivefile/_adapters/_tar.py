@@ -5,26 +5,24 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from archivefile._adapters._base import BaseArchiveAdapter
+from archivefile._adapters._abc import AbstractArchiveFile
 from archivefile._models import ArchiveMember
 from archivefile._utils import get_member_name, realpath
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Iterator
 
-    from typing_extensions import Generator
-
-    from archivefile._types import StrPath
+    from archivefile._types import MemberLike, StrPath
 
 
-class TarFileAdapter(BaseArchiveAdapter):
+class TarFileAdapter(AbstractArchiveFile):
     def __init__(self, file: StrPath, *, password: str | None = None) -> None:
         super().__init__(file, password=password)
         self._tarfile = tarfile.TarFile.open(self.file)
         # https://docs.python.org/3/library/tarfile.html#supporting-older-python-versions
         self._tarfile.extraction_filter = getattr(tarfile, "data_filter", (lambda member, path: member))
 
-    def get_member(self, member: StrPath | ArchiveMember) -> ArchiveMember:
+    def get_member(self, member: MemberLike) -> ArchiveMember:
         name = get_member_name(member)
         tarinfo = self._tarfile.getmember(name)
 
@@ -37,7 +35,7 @@ class TarFileAdapter(BaseArchiveAdapter):
             is_file=tarinfo.isfile(),
         )
 
-    def get_members(self) -> Generator[ArchiveMember]:
+    def get_members(self) -> Iterator[ArchiveMember]:
         for tarinfo in self._tarfile.getmembers():
             yield ArchiveMember(
                 name=tarinfo.name,
@@ -51,7 +49,7 @@ class TarFileAdapter(BaseArchiveAdapter):
     def get_names(self) -> tuple[str, ...]:
         return tuple(self._tarfile.getnames())
 
-    def extract(self, member: StrPath | ArchiveMember, *, destination: StrPath | None = None) -> Path:
+    def extract(self, member: MemberLike, *, destination: StrPath | None = None) -> Path:
         destination = realpath(destination) if destination else Path.cwd()
         destination.mkdir(parents=True, exist_ok=True)
 
@@ -64,7 +62,7 @@ class TarFileAdapter(BaseArchiveAdapter):
         self,
         *,
         destination: StrPath | None = None,
-        members: Iterable[StrPath | ArchiveMember] | None = None,
+        members: Iterable[MemberLike] | None = None,
     ) -> Path:
         destination = realpath(destination) if destination else Path.cwd()
         destination.mkdir(parents=True, exist_ok=True)
@@ -77,7 +75,7 @@ class TarFileAdapter(BaseArchiveAdapter):
 
         return destination
 
-    def read_bytes(self, member: StrPath | ArchiveMember) -> bytes:
+    def read_bytes(self, member: MemberLike) -> bytes:
         name = get_member_name(member)
         fileobj = self._tarfile.extractfile(name)
         if fileobj is None:  # pragma: no cover

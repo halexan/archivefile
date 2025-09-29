@@ -6,25 +6,24 @@ from typing import TYPE_CHECKING
 
 from rarfile import NoRarEntry, RarFile
 
-from archivefile._adapters._base import BaseArchiveAdapter
+from archivefile._adapters._abc import AbstractArchiveFile
 from archivefile._models import ArchiveMember
 from archivefile._utils import get_member_name, realpath
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Iterator
 
     from rarfile import RarInfo
-    from typing_extensions import Generator
 
-    from archivefile._types import StrPath
+    from archivefile._types import MemberLike, StrPath
 
 
-class RarFileAdapter(BaseArchiveAdapter):
+class RarFileAdapter(AbstractArchiveFile):
     def __init__(self, file: StrPath, *, password: str | None = None) -> None:
         super().__init__(file, password=password)
         self._rarfile = RarFile(self._file)
 
-    def get_member(self, member: StrPath | ArchiveMember) -> ArchiveMember:
+    def get_member(self, member: MemberLike) -> ArchiveMember:
         name = get_member_name(member)
 
         try:
@@ -44,7 +43,7 @@ class RarFileAdapter(BaseArchiveAdapter):
             is_file=not rarinfo.filename.endswith("/"),
         )
 
-    def get_members(self) -> Generator[ArchiveMember]:
+    def get_members(self) -> Iterator[ArchiveMember]:
         for rarinfo in self._rarfile.infolist():
             yield ArchiveMember(
                 name=rarinfo.filename,
@@ -58,7 +57,7 @@ class RarFileAdapter(BaseArchiveAdapter):
     def get_names(self) -> tuple[str, ...]:
         return tuple(self._rarfile.namelist())
 
-    def extract(self, member: StrPath | ArchiveMember, *, destination: StrPath | None = None) -> Path:
+    def extract(self, member: MemberLike, *, destination: StrPath | None = None) -> Path:
         destination = realpath(destination) if destination else Path.cwd()
         destination.mkdir(parents=True, exist_ok=True)
 
@@ -78,7 +77,7 @@ class RarFileAdapter(BaseArchiveAdapter):
         self,
         *,
         destination: StrPath | None = None,
-        members: Iterable[StrPath | ArchiveMember] | None = None,
+        members: Iterable[MemberLike] | None = None,
     ) -> Path:
         destination = realpath(destination) if destination else Path.cwd()
         destination.mkdir(parents=True, exist_ok=True)
@@ -97,7 +96,7 @@ class RarFileAdapter(BaseArchiveAdapter):
         self._rarfile.extractall(path=destination, members=names, pwd=self._password)
         return destination
 
-    def read_bytes(self, member: StrPath | ArchiveMember) -> bytes:
+    def read_bytes(self, member: MemberLike) -> bytes:
         name = get_member_name(member)
 
         if name.endswith("/"):
