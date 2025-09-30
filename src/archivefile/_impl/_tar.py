@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import tarfile
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -15,6 +14,16 @@ if TYPE_CHECKING:
     from .._types import MemberLike, StrPath
 
 
+def _tarinfo_to_member(tarinfo: tarfile.TarInfo) -> ArchiveMember:
+    return ArchiveMember(
+        name=tarinfo.name,
+        size=tarinfo.size,
+        compressed_size=tarinfo.size,
+        is_dir=tarinfo.isdir(),
+        is_file=tarinfo.isfile(),
+    )
+
+
 class TarArchiveFile(AbstractArchiveFile):
     def __init__(self, file: StrPath, *, password: str | None = None) -> None:
         super().__init__(file, password=password)
@@ -26,25 +35,11 @@ class TarArchiveFile(AbstractArchiveFile):
         name = get_member_name(member)
         tarinfo = self._tarfile.getmember(name)
 
-        return ArchiveMember(
-            name=tarinfo.name,
-            size=tarinfo.size,
-            compressed_size=tarinfo.size,
-            datetime=datetime.fromtimestamp(tarinfo.mtime, tz=timezone.utc),
-            is_dir=tarinfo.isdir(),
-            is_file=tarinfo.isfile(),
-        )
+        return _tarinfo_to_member(tarinfo)
 
     def get_members(self) -> Iterator[ArchiveMember]:
         for tarinfo in self._tarfile.getmembers():
-            yield ArchiveMember(
-                name=tarinfo.name,
-                size=tarinfo.size,
-                compressed_size=tarinfo.size,
-                datetime=datetime.fromtimestamp(tarinfo.mtime, tz=timezone.utc),
-                is_dir=tarinfo.isdir(),
-                is_file=tarinfo.isfile(),
-            )
+            yield _tarinfo_to_member(tarinfo)
 
     def get_names(self) -> tuple[str, ...]:
         return tuple(self._tarfile.getnames())

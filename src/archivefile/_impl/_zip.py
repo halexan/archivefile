@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
-from zipfile import ZipFile
+from zipfile import ZipFile, ZipInfo
 
 from .._models import ArchiveMember
 from .._utils import get_member_name, realpath
@@ -13,6 +12,16 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
     from .._types import MemberLike, StrPath
+
+
+def _zipinfo_to_member(zipinfo: ZipInfo) -> ArchiveMember:
+    return ArchiveMember(
+        name=zipinfo.filename,
+        size=zipinfo.file_size,
+        compressed_size=zipinfo.compress_size,
+        is_dir=zipinfo.is_dir(),
+        is_file=not zipinfo.is_dir(),
+    )
 
 
 class ZipArchiveFile(AbstractArchiveFile):
@@ -25,25 +34,11 @@ class ZipArchiveFile(AbstractArchiveFile):
         name = get_member_name(member)
         zipinfo = self._zipfile.getinfo(name)
 
-        return ArchiveMember(
-            name=zipinfo.filename,
-            size=zipinfo.file_size,
-            compressed_size=zipinfo.compress_size,
-            datetime=datetime(*zipinfo.date_time),
-            is_dir=zipinfo.is_dir(),
-            is_file=not zipinfo.is_dir(),
-        )
+        return _zipinfo_to_member(zipinfo)
 
     def get_members(self) -> Iterator[ArchiveMember]:
         for zipinfo in self._zipfile.filelist:
-            yield ArchiveMember(
-                name=zipinfo.filename,
-                size=zipinfo.file_size,
-                compressed_size=zipinfo.compress_size,
-                datetime=datetime(*zipinfo.date_time),
-                is_dir=zipinfo.is_dir(),
-                is_file=not zipinfo.is_dir(),
-            )
+            yield _zipinfo_to_member(zipinfo)
 
     def get_names(self) -> tuple[str, ...]:
         return tuple(self._zipfile.namelist())

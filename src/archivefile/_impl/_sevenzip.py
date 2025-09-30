@@ -66,6 +66,18 @@ class BytesIOFactory(WriterFactory):
             return b""
 
 
+def _sevenzipinfo_to_member(sevenzipinfo: FileInfo) -> ArchiveMember:
+    return ArchiveMember(
+        name=sevenzipinfo.filename,
+        size=sevenzipinfo.uncompressed,
+        # Sometimes sevenzip can return 0 for compressed size when there's no compression
+        # in that case we simply return the uncompressed size instead.
+        compressed_size=sevenzipinfo.compressed or sevenzipinfo.uncompressed,
+        is_dir=sevenzipinfo.is_directory,
+        is_file=not sevenzipinfo.is_directory,
+    )
+
+
 class SevenZipArchiveFile(AbstractArchiveFile):
     def __init__(self, file: StrPath, *, password: str | None = None) -> None:
         try:
@@ -93,29 +105,11 @@ class SevenZipArchiveFile(AbstractArchiveFile):
             msg = f"{name} not found in {self.file}"
             raise KeyError(msg) from None
 
-        return ArchiveMember(
-            name=sevenzipinfo.filename,
-            size=sevenzipinfo.uncompressed,
-            # Sometimes sevenzip can return 0 for compressed size when there's no compression
-            # in that case we simply return the uncompressed size instead.
-            compressed_size=sevenzipinfo.compressed or sevenzipinfo.uncompressed,
-            datetime=sevenzipinfo.creationtime,
-            is_dir=sevenzipinfo.is_directory,
-            is_file=not sevenzipinfo.is_directory,
-        )
+        return _sevenzipinfo_to_member(sevenzipinfo)
 
     def get_members(self) -> Iterator[ArchiveMember]:
         for sevenzipinfo in self._sevenzipfile.list():
-            yield ArchiveMember(
-                name=sevenzipinfo.filename,
-                size=sevenzipinfo.uncompressed,
-                # Sometimes sevenzip can return 0 for compressed size when there's no compression
-                # in that case we simply return the uncompressed size instead.
-                compressed_size=sevenzipinfo.compressed or sevenzipinfo.uncompressed,
-                datetime=sevenzipinfo.creationtime,
-                is_dir=sevenzipinfo.is_directory,
-                is_file=not sevenzipinfo.is_directory,
-            )
+            yield _sevenzipinfo_to_member(sevenzipinfo)
 
     def get_names(self) -> tuple[str, ...]:
         return tuple(self._sevenzipfile.getnames())

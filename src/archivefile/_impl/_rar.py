@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -23,6 +22,16 @@ def is_rarfile(file: StrPath) -> bool:
         return rarfile.is_rarfile(file) or rarfile.is_rarfile_sfx(file)  # type: ignore[no-any-return]
     except ModuleNotFoundError:
         return False
+
+
+def _rarinfo_to_member(rarinfo: RarInfo) -> ArchiveMember:
+    return ArchiveMember(
+        name=rarinfo.filename,
+        size=rarinfo.file_size,
+        compressed_size=rarinfo.compress_size,
+        is_dir=rarinfo.filename.endswith("/"),
+        is_file=not rarinfo.filename.endswith("/"),
+    )
 
 
 class RarArchiveFile(AbstractArchiveFile):
@@ -54,25 +63,11 @@ class RarArchiveFile(AbstractArchiveFile):
             msg = f"{name} not found in {self._file}"
             raise KeyError(msg) from None
 
-        return ArchiveMember(
-            name=rarinfo.filename,
-            size=rarinfo.file_size,
-            compressed_size=rarinfo.compress_size,
-            datetime=datetime(*rarinfo.date_time),
-            is_dir=rarinfo.filename.endswith("/"),
-            is_file=not rarinfo.filename.endswith("/"),
-        )
+        return _rarinfo_to_member(rarinfo)
 
     def get_members(self) -> Iterator[ArchiveMember]:
         for rarinfo in self._rarfile.infolist():
-            yield ArchiveMember(
-                name=rarinfo.filename,
-                size=rarinfo.file_size,
-                compressed_size=rarinfo.compress_size,
-                datetime=datetime(*rarinfo.date_time),
-                is_dir=rarinfo.filename.endswith("/"),
-                is_file=not rarinfo.filename.endswith("/"),
-            )
+            yield _rarinfo_to_member(rarinfo)
 
     def get_names(self) -> tuple[str, ...]:
         return tuple(self._rarfile.namelist())

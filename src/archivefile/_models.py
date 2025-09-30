@@ -1,10 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import datetime as dt
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -21,9 +17,6 @@ class ArchiveMember:
 
     compressed_size: int
     """Compressed size of the archive member."""
-
-    datetime: dt.datetime
-    """The time and date of the last modification to the archive member."""
 
     is_dir: bool
     """True if the archive member is a directory, False otherwise."""
