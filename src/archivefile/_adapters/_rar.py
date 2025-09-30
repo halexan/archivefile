@@ -4,8 +4,6 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from rarfile import NoRarEntry, RarFile
-
 from archivefile._adapters._abc import AbstractArchiveFile
 from archivefile._models import ArchiveMember
 from archivefile._utils import get_member_name, realpath
@@ -18,10 +16,32 @@ if TYPE_CHECKING:
     from archivefile._types import MemberLike, StrPath
 
 
+def is_rarfile(file: StrPath) -> bool:
+    try:
+        import rarfile
+
+        return rarfile.is_rarfile(file) or rarfile.is_rarfile_sfx(file)  # type: ignore[no-any-return]
+    except ModuleNotFoundError:
+        return False
+
+
 class RarFileAdapter(AbstractArchiveFile):
     def __init__(self, file: StrPath, *, password: str | None = None) -> None:
+        try:
+            import rarfile
+        except ModuleNotFoundError:
+            filename = Path(file).as_posix()
+            msg = (
+                f"Cannot open archive: {filename!r}\n"
+                "RAR support requires the 'rarfile' package, which is not installed.\n"
+                "To enable RAR support, install archivefile with the optional RAR dependencies: 'archivefile[rar]'"
+            )
+            raise ModuleNotFoundError(msg) from None
+
         super().__init__(file, password=password)
-        self._rarfile = RarFile(self._file)
+        self._RarFile = rarfile.RarFile
+        self._NoRarEntry = rarfile.NoRarEntry
+        self._rarfile = self._RarFile(self._file)
 
     def get_member(self, member: MemberLike) -> ArchiveMember:
         name = get_member_name(member)
@@ -30,7 +50,7 @@ class RarFileAdapter(AbstractArchiveFile):
             # ZipFile and TarFile raise KeyError but RarFile raises it's own NoRarEntry
             # So for consistency's sake, we'll also raise KeyError here
             rarinfo: RarInfo = self._rarfile.getinfo(name)
-        except NoRarEntry:
+        except self._NoRarEntry:
             msg = f"{name} not found in {self._file}"
             raise KeyError(msg) from None
 
@@ -67,7 +87,7 @@ class RarFileAdapter(AbstractArchiveFile):
             # ZipFile and TarFile raise KeyError but RarFile raises it's own NoRarEntry
             # So for consistency's sake, we'll also raise KeyError here
             self._rarfile.extract(member=name, path=destination, pwd=self._password)
-        except NoRarEntry:
+        except self._NoRarEntry:
             msg = f"{name} not found in {self._file}"
             raise KeyError(msg) from None
 
@@ -106,7 +126,7 @@ class RarFileAdapter(AbstractArchiveFile):
             # ZipFile and TarFile raise KeyError but RarFile raises it's own NoRarEntry
             # So for consistency's sake, we'll also raise KeyError here
             return self._rarfile.read(name, pwd=self._password)  # type: ignore[no-any-return]
-        except NoRarEntry:
+        except self._NoRarEntry:
             msg = f"{name} not found in {self._file}"
             raise KeyError(msg) from None
 

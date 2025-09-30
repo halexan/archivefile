@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from archivefile._core import ArchiveFile
-from archivefile._models import ArchiveMember
-from archivefile._utils import is_archive
+from ._core import ArchiveFile, is_archive
+from ._models import ArchiveMember
 
 __all__ = [
     "ArchiveFile",

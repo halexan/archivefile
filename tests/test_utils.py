@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from archivefile._utils import is_archive
+from archivefile import is_archive
 
 
 def test_is_archive() -> None:

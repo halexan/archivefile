@@ -4,9 +4,11 @@ from tarfile import is_tarfile
 from typing import TYPE_CHECKING
 from zipfile import is_zipfile
 
+from archivefile._adapters._rar import RarFileAdapter, is_rarfile
+from archivefile._adapters._sevenzip import SevenZipFileAdapter, is_7zfile
 from archivefile._adapters._tar import TarFileAdapter
 from archivefile._adapters._zip import ZipFileAdapter
-from archivefile._utils import is_7zfile, is_rarfile
+from archivefile._utils import realpath
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -17,6 +19,29 @@ if TYPE_CHECKING:
     from archivefile._adapters._abc import AbstractArchiveFile
     from archivefile._models import ArchiveMember
     from archivefile._types import ErrorHandler, StrPath
+
+
+def is_archive(file: StrPath) -> bool:
+    """
+    Check whether the given archive file is a supported archive or not.
+
+    Parameters
+    ----------
+    file : StrPath
+        Path to the archive file.
+
+    Returns
+    -------
+    bool
+        True if the archive is supported, False otherwise.
+
+    """
+    file = realpath(file)
+
+    if not file.is_file():
+        return False
+
+    return is_tarfile(file) or is_zipfile(file) or is_7zfile(file) or is_rarfile(file)
 
 
 class ArchiveFile:
@@ -55,12 +80,8 @@ class ArchiveFile:
         elif is_tarfile(file):
             adapter = TarFileAdapter
         elif is_7zfile(file):
-            from archivefile._adapters._sevenzip import SevenZipFileAdapter
-
             adapter = SevenZipFileAdapter
         elif is_rarfile(file):
-            from archivefile._adapters._rar import RarFileAdapter
-
             adapter = RarFileAdapter
         else:
             msg = f"Unsupported archive format: {file}"

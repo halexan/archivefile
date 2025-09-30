@@ -4,9 +4,6 @@ import io
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from py7zr import FileInfo, SevenZipFile
-from py7zr.io import Py7zIO, WriterFactory
-
 from archivefile._adapters._abc import AbstractArchiveFile
 from archivefile._models import ArchiveMember
 from archivefile._utils import get_member_name, realpath
@@ -14,7 +11,22 @@ from archivefile._utils import get_member_name, realpath
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
+    from py7zr import FileInfo
+    from py7zr.io import Py7zIO, WriterFactory
+
     from archivefile._types import MemberLike, StrPath
+else:
+    Py7zIO = object
+    WriterFactory = object
+
+
+def is_7zfile(file: StrPath) -> bool:
+    try:
+        import py7zr
+
+        return py7zr.is_7zfile(file)  # type: ignore[arg-type]
+    except ModuleNotFoundError:
+        return False
 
 
 class Py7zBytesIO(Py7zIO):
@@ -56,8 +68,19 @@ class BytesIOFactory(WriterFactory):
 
 class SevenZipFileAdapter(AbstractArchiveFile):
     def __init__(self, file: StrPath, *, password: str | None = None) -> None:
+        try:
+            import py7zr
+        except ModuleNotFoundError:
+            filename = Path(file).as_posix()
+            msg = (
+                f"Cannot open archive: {filename!r}\n"
+                "7z support requires the 'py7zr' package, which is not installed.\n"
+                "To enable 7z support, install archivefile with the optional 7z dependencies: 'archivefile[7z]'"
+            )
+            raise ModuleNotFoundError(msg) from None
+
         super().__init__(file, password=password)
-        self._sevenzipfile = SevenZipFile(self.file, password=self.password)
+        self._sevenzipfile = py7zr.SevenZipFile(self.file, password=self.password)
 
     def get_member(self, member: MemberLike) -> ArchiveMember:
         name = get_member_name(member).removesuffix("/")
