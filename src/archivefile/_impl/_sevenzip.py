@@ -66,7 +66,7 @@ class BytesIOFactory(WriterFactory):
             return b""
 
 
-class SevenZipFileAdapter(AbstractArchiveFile):
+class SevenZipArchiveFile(AbstractArchiveFile):
     def __init__(self, file: StrPath, *, password: str | None = None) -> None:
         try:
             import py7zr

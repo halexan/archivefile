@@ -25,7 +25,7 @@ def is_rarfile(file: StrPath) -> bool:
         return False
 
 
-class RarFileAdapter(AbstractArchiveFile):
+class RarArchiveFile(AbstractArchiveFile):
     def __init__(self, file: StrPath, *, password: str | None = None) -> None:
         try:
             import rarfile

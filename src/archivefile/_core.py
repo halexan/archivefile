@@ -6,10 +6,10 @@ from zipfile import is_zipfile
 
 from archivefile._utils import realpath
 
-from ._impl._rar import RarFileAdapter, is_rarfile
-from ._impl._sevenzip import SevenZipFileAdapter, is_7zfile
-from ._impl._tar import TarFileAdapter
-from ._impl._zip import ZipFileAdapter
+from ._impl._rar import RarArchiveFile, is_rarfile
+from ._impl._sevenzip import SevenZipArchiveFile, is_7zfile
+from ._impl._tar import TarArchiveFile
+from ._impl._zip import ZipArchiveFile
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
     from ._impl._abc import AbstractArchiveFile
     from ._models import ArchiveMember
-    from ._types import ErrorHandler, StrPath
+    from ._types import ErrorHandler, MemberLike, StrPath
 
 
 def is_archive(file: StrPath) -> bool:
@@ -46,7 +46,7 @@ def is_archive(file: StrPath) -> bool:
 
 
 class ArchiveFile:
-    __slots__ = ("_adapter",)
+    __slots__ = ("_impl",)
 
     def __init__(self, file: StrPath, *, password: str | None = None) -> None:
         """
@@ -74,45 +74,45 @@ class ArchiveFile:
         - [`SevenZipFile`][py7zr.SevenZipFile] - requires `archivefile[7z]`
 
         """
-        adapter: type[AbstractArchiveFile]
+        implmentation: type[AbstractArchiveFile]
 
         if is_zipfile(file):
-            adapter = ZipFileAdapter
+            implmentation = ZipArchiveFile
         elif is_tarfile(file):
-            adapter = TarFileAdapter
+            implmentation = TarArchiveFile
         elif is_7zfile(file):
-            adapter = SevenZipFileAdapter
+            implmentation = SevenZipArchiveFile
         elif is_rarfile(file):
-            adapter = RarFileAdapter
+            implmentation = RarArchiveFile
         else:
             msg = f"Unsupported archive format: {file}"
             raise NotImplementedError(msg)
 
-        self._adapter = adapter(file, password=password)
+        self._impl = implmentation(file, password=password)
 
     def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *args: object) -> None:
-        self._adapter.close()
+        self._impl.close()
 
     @property
     def file(self) -> Path:
         """Path to the archive file."""
-        return self._adapter.file
+        return self._impl.file
 
     @property
     def password(self) -> str | None:
         """Archive password."""
-        return self._adapter.password
+        return self._impl.password
 
-    def get_member(self, member: StrPath | ArchiveMember) -> ArchiveMember:
+    def get_member(self, member: MemberLike) -> ArchiveMember:
         """
         Retrieve an ArchiveMember object by it's name.
 
         Parameters
         ----------
-        member : StrPath | ArchiveMember
+        member : MemberLike
             Name of the member.
 
         Returns
@@ -143,7 +143,7 @@ class ArchiveFile:
         ```
 
         """
-        return self._adapter.get_member(member)
+        return self._impl.get_member(member)
 
     def get_members(self) -> Iterator[ArchiveMember]:
         """
@@ -167,7 +167,7 @@ class ArchiveFile:
         ```
 
         """
-        yield from self._adapter.get_members()
+        yield from self._impl.get_members()
 
     def get_names(self) -> tuple[str, ...]:
         """
@@ -192,15 +192,15 @@ class ArchiveFile:
         ```
 
         """
-        return self._adapter.get_names()
+        return self._impl.get_names()
 
-    def extract(self, member: StrPath | ArchiveMember, *, destination: StrPath | None = None) -> Path:
+    def extract(self, member: MemberLike, *, destination: StrPath | None = None) -> Path:
         """
         Extract a member of the archive.
 
         Parameters
         ----------
-        member : StrPath | ArchiveMember
+        member : MemberLike
             Name of the member or an ArchiveMember object.
         destination : StrPath
             The path to the directory where the member will be extracted.
@@ -233,13 +233,13 @@ class ArchiveFile:
         ```
 
         """
-        return self._adapter.extract(member, destination=destination)
+        return self._impl.extract(member, destination=destination)
 
     def extractall(
         self,
         *,
         destination: StrPath | None = None,
-        members: Iterable[StrPath | ArchiveMember] | None = None,
+        members: Iterable[MemberLike] | None = None,
     ) -> Path:
         """
         Extract all the members of the archive to the destination directory.
@@ -249,7 +249,7 @@ class ArchiveFile:
         destination : StrPath
             The path to the directory where the members will be extracted.
             If not specified, the current working directory is used as the default destination.
-        members : CollectionOf[StrPath | ArchiveMember], optional
+        members : CollectionOf[MemberLike], optional
             Collection of member names or ArchiveMember objects to extract.
             Default is `None` which will extract all members.
 
@@ -284,15 +284,15 @@ class ArchiveFile:
         ```
 
         """
-        return self._adapter.extractall(destination=destination, members=members)
+        return self._impl.extractall(destination=destination, members=members)
 
-    def read_bytes(self, member: StrPath | ArchiveMember) -> bytes:
+    def read_bytes(self, member: MemberLike) -> bytes:
         """
         Read the member in bytes mode.
 
         Parameters
         ----------
-        member : StrPath | ArchiveMember
+        member : MemberLike
             Name of the member or an ArchiveMember object.
 
         Returns
@@ -317,11 +317,11 @@ class ArchiveFile:
         ```
 
         """
-        return self._adapter.read_bytes(member)
+        return self._impl.read_bytes(member)
 
     def read_text(
         self,
-        member: StrPath | ArchiveMember,
+        member: MemberLike,
         *,
         encoding: str = "utf-8",
         errors: ErrorHandler = "strict",
@@ -331,7 +331,7 @@ class ArchiveFile:
 
         Parameters
         ----------
-        member : StrPath | ArchiveMember
+        member : MemberLike
             Name of the member or an ArchiveMember object.
         encoding : str, optional
             Encoding used to read the file. Default is `utf-8`.
@@ -370,7 +370,7 @@ class ArchiveFile:
         ```
 
         """
-        return self._adapter.read_text(member, encoding=encoding, errors=errors)
+        return self._impl.read_text(member, encoding=encoding, errors=errors)
 
     def close(self) -> None:
         """
@@ -391,4 +391,4 @@ class ArchiveFile:
         ```
 
         """
-        self._adapter.close()
+        self._impl.close()

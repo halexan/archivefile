@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from .._types import MemberLike, StrPath
 
 
-class ZipFileAdapter(AbstractArchiveFile):
+class ZipArchiveFile(AbstractArchiveFile):
     def __init__(self, file: StrPath, *, password: str | None = None) -> None:
         super().__init__(file, password=password)
         self._encoded_password = password.encode() if password else None

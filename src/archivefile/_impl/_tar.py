@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from .._types import MemberLike, StrPath
 
 
-class TarFileAdapter(AbstractArchiveFile):
+class TarArchiveFile(AbstractArchiveFile):
     def __init__(self, file: StrPath, *, password: str | None = None) -> None:
         super().__init__(file, password=password)
         self._tarfile = tarfile.TarFile.open(self.file)
