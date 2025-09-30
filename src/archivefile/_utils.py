@@ -4,10 +4,10 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from archivefile._models import ArchiveMember
+from ._models import ArchiveMember
 
 if TYPE_CHECKING:
-    from archivefile._types import MemberLike, StrPath
+    from ._types import MemberLike, StrPath
 
 
 def realpath(path: StrPath) -> Path:

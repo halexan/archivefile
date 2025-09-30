@@ -5,14 +5,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from zipfile import ZipFile
 
-from archivefile._adapters._abc import AbstractArchiveFile
-from archivefile._models import ArchiveMember
-from archivefile._utils import get_member_name, realpath
+from .._models import ArchiveMember
+from .._utils import get_member_name, realpath
+from ._abc import AbstractArchiveFile
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
-    from archivefile._types import MemberLike, StrPath
+    from .._types import MemberLike, StrPath
 
 
 class ZipFileAdapter(AbstractArchiveFile):

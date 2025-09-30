@@ -3,7 +3,7 @@ from __future__ import annotations
 import abc
 from typing import TYPE_CHECKING
 
-from archivefile._utils import realpath
+from .._utils import realpath
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -11,8 +11,8 @@ if TYPE_CHECKING:
 
     from typing_extensions import Self
 
-    from archivefile._models import ArchiveMember
-    from archivefile._types import ErrorHandler, MemberLike, StrPath
+    from .._models import ArchiveMember
+    from .._types import ErrorHandler, MemberLike, StrPath
 
 
 class AbstractArchiveFile(abc.ABC):

@@ -4,9 +4,9 @@ import io
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from archivefile._adapters._abc import AbstractArchiveFile
-from archivefile._models import ArchiveMember
-from archivefile._utils import get_member_name, realpath
+from .._models import ArchiveMember
+from .._utils import get_member_name, realpath
+from ._abc import AbstractArchiveFile
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from py7zr import FileInfo
     from py7zr.io import Py7zIO, WriterFactory
 
-    from archivefile._types import MemberLike, StrPath
+    from .._types import MemberLike, StrPath
 else:
     Py7zIO = object
     WriterFactory = object

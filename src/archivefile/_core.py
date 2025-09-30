@@ -4,11 +4,12 @@ from tarfile import is_tarfile
 from typing import TYPE_CHECKING
 from zipfile import is_zipfile
 
-from archivefile._adapters._rar import RarFileAdapter, is_rarfile
-from archivefile._adapters._sevenzip import SevenZipFileAdapter, is_7zfile
-from archivefile._adapters._tar import TarFileAdapter
-from archivefile._adapters._zip import ZipFileAdapter
 from archivefile._utils import realpath
+
+from ._impl._rar import RarFileAdapter, is_rarfile
+from ._impl._sevenzip import SevenZipFileAdapter, is_7zfile
+from ._impl._tar import TarFileAdapter
+from ._impl._zip import ZipFileAdapter
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -16,9 +17,9 @@ if TYPE_CHECKING:
 
     from typing_extensions import Self
 
-    from archivefile._adapters._abc import AbstractArchiveFile
-    from archivefile._models import ArchiveMember
-    from archivefile._types import ErrorHandler, StrPath
+    from ._impl._abc import AbstractArchiveFile
+    from ._models import ArchiveMember
+    from ._types import ErrorHandler, StrPath
 
 
 def is_archive(file: StrPath) -> bool:
