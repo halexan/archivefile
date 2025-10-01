@@ -11,6 +11,7 @@ class ArchiveFileError(Exception):
     """
     Base exception for all ArchiveFile errors.
     """
+
     __module__ = "archivefile"
 
     def __init_subclass__(cls) -> None:
@@ -32,9 +33,14 @@ class UnsupportedArchiveFormatError(ArchiveFileError):
     """
     Raised when the archive file format is unsupported or unrecognized.
     """
+
     def __init__(self, *, file: StrPath) -> None:
         filename = Path(file).as_posix()
-        message = f"Unsupported or unrecognized archive format for file: {filename!r}"
+        message = (
+            f"Unsupported or unrecognized archive format for file: {filename!r}.\n"
+            "If this is a 7z or rar archive, support is available via the optional "
+            "extras 'archivefile[7z]' and 'archivefile[rar]'."
+        )
         super().__init__(message, file=file)
 
 
@@ -42,6 +48,7 @@ class ArchiveMemberNotFoundError(ArchiveFileError):
     """
     Raised when a specified member (file or directory) is not found inside the archive file.
     """
+
     def __init__(self, *, member: str, file: StrPath) -> None:
         self._member = member
         filename = Path(file).as_posix()

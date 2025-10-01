@@ -1,13 +1,33 @@
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING
 
 import pytest
 
+from archivefile import ArchiveFile, UnsupportedArchiveFormatError
+
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from archivefile import ArchiveFile
+
+def test_non_existent_file_error(tmp_path: Path) -> None:
+    archive_path = tmp_path / "foo.zip"
+    with pytest.raises(FileNotFoundError, match=re.escape(str(archive_path))):
+        ArchiveFile(archive_path)
+
+
+def test_unsupported_archive_format_error(tmp_path: Path) -> None:
+    archive_path = tmp_path / "foo.zip"
+    archive_path.write_text("This is not a valid archive format.")
+    filename = archive_path.as_posix()
+    message = (
+        f"Unsupported or unrecognized archive format for file: {filename!r}.\n"
+        "If this is a 7z or rar archive, support is available via the optional "
+        "extras 'archivefile[7z]' and 'archivefile[rar]'."
+    )
+    with pytest.raises(UnsupportedArchiveFormatError, match=re.escape(message)):
+        ArchiveFile(archive_path)
 
 
 def test_missing_member(archive_file: ArchiveFile) -> None:

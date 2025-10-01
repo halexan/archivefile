@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import abc
+from pathlib import Path
 from typing import TYPE_CHECKING
-
-from .._utils import realpath
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
-    from pathlib import Path
 
     from typing_extensions import Self
 
@@ -17,7 +15,7 @@ if TYPE_CHECKING:
 
 class AbstractArchiveFile(abc.ABC):
     def __init__(self, file: StrPath, *, password: str | None = None) -> None:
-        self._file = realpath(file)
+        self._file = Path(file)
         self._password = password
         super().__init__()
 

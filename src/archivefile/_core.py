@@ -6,6 +6,7 @@ from zipfile import is_zipfile
 
 from archivefile._utils import realpath
 
+from ._errors import UnsupportedArchiveFormatError
 from ._impl._rar import RarArchiveFile, is_rarfile
 from ._impl._sevenzip import SevenZipArchiveFile, is_7zfile
 from ._impl._tar import TarArchiveFile
@@ -74,6 +75,10 @@ class ArchiveFile:
         - [`SevenZipFile`][py7zr.SevenZipFile] - requires `archivefile[7z]`
 
         """
+        file = realpath(file)
+        if not file.is_file():
+            raise FileNotFoundError(file)
+
         implmentation: type[AbstractArchiveFile]
 
         if is_zipfile(file):
@@ -85,8 +90,7 @@ class ArchiveFile:
         elif is_rarfile(file):
             implmentation = RarArchiveFile
         else:
-            msg = f"Unsupported archive format: {file}"
-            raise NotImplementedError(msg)
+            raise UnsupportedArchiveFormatError(file=file)
 
         self._impl = implmentation(file, password=password)
 
