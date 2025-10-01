@@ -4,8 +4,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from zipfile import ZipFile, ZipInfo
 
+from .._errors import ArchiveMemberNotFoundError
 from .._models import ArchiveMember
-from .._utils import get_member_name, realpath
+from .._utils import get_member_name, realpath, validate_members
 from ._abc import AbstractArchiveFile
 
 if TYPE_CHECKING:
@@ -32,7 +33,10 @@ class ZipArchiveFile(AbstractArchiveFile):
 
     def get_member(self, member: MemberLike) -> ArchiveMember:
         name = get_member_name(member)
-        zipinfo = self._zipfile.getinfo(name)
+        try:
+            zipinfo = self._zipfile.getinfo(name)
+        except KeyError:
+            raise ArchiveMemberNotFoundError(member=name, file=self.file) from None
 
         return _zipinfo_to_member(zipinfo)
 
@@ -48,7 +52,10 @@ class ZipArchiveFile(AbstractArchiveFile):
         destination.mkdir(parents=True, exist_ok=True)
 
         name = get_member_name(member)
-        self._zipfile.extract(member=name, path=destination, pwd=self._encoded_password)
+        try:
+            self._zipfile.extract(member=name, path=destination, pwd=self._encoded_password)
+        except KeyError:
+            raise ArchiveMemberNotFoundError(member=name, file=self.file) from None
 
         return destination / name
 
@@ -62,16 +69,19 @@ class ZipArchiveFile(AbstractArchiveFile):
         destination.mkdir(parents=True, exist_ok=True)
 
         if members:
-            names = [get_member_name(member) for member in members]
-            self._zipfile.extractall(path=destination, members=names, pwd=self._encoded_password)
+            members = validate_members(members, available=self._zipfile.namelist(), archive=self.file)
+            self._zipfile.extractall(path=destination, members=members)
         else:
-            self._zipfile.extractall(path=destination, pwd=self._encoded_password)
+            self._zipfile.extractall(path=destination)
 
         return destination
 
     def read_bytes(self, member: MemberLike) -> bytes:
         name = get_member_name(member)
-        return self._zipfile.read(name, pwd=self._encoded_password)
+        try:
+            return self._zipfile.read(name, pwd=self._encoded_password)
+        except KeyError:
+            raise ArchiveMemberNotFoundError(member=name, file=self.file) from None
 
     def close(self) -> None:
         self._zipfile.close()

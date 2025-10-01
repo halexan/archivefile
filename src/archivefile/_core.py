@@ -49,7 +49,7 @@ def is_archive(file: StrPath) -> bool:
 class ArchiveFile:
     __slots__ = ("_impl",)
 
-    def __init__(self, file: StrPath, *, password: str | None = None) -> None:
+    def __init__(self, file: StrPath, /, *, password: str | None = None) -> None:
         """
         Open an archive file.
 
@@ -110,7 +110,7 @@ class ArchiveFile:
         """Archive password."""
         return self._impl.password
 
-    def get_member(self, member: MemberLike) -> ArchiveMember:
+    def get_member(self, member: MemberLike, /) -> ArchiveMember:
         """
         Retrieve an ArchiveMember object by it's name.
 
@@ -198,7 +198,7 @@ class ArchiveFile:
         """
         return self._impl.get_names()
 
-    def extract(self, member: MemberLike, *, destination: StrPath | None = None) -> Path:
+    def extract(self, member: MemberLike, /, *, destination: StrPath | None = None) -> Path:
         """
         Extract a member of the archive.
 
@@ -290,7 +290,7 @@ class ArchiveFile:
         """
         return self._impl.extractall(destination=destination, members=members)
 
-    def read_bytes(self, member: MemberLike) -> bytes:
+    def read_bytes(self, member: MemberLike, /) -> bytes:
         """
         Read the member in bytes mode.
 
@@ -326,6 +326,7 @@ class ArchiveFile:
     def read_text(
         self,
         member: MemberLike,
+        /,
         *,
         encoding: str = "utf-8",
         errors: ErrorHandler = "strict",

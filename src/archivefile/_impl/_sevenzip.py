@@ -4,8 +4,9 @@ import io
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from .._errors import ArchiveMemberNotFoundError
 from .._models import ArchiveMember
-from .._utils import get_member_name, realpath
+from .._utils import get_member_name, realpath, validate_members
 from ._abc import AbstractArchiveFile
 
 if TYPE_CHECKING:
@@ -100,10 +101,7 @@ class SevenZipArchiveFile(AbstractArchiveFile):
             # SevenZipFile doesn't have an equivalent for `get_member` like the rest, so we hand craft it instead
             sevenzipinfo: FileInfo = next(member for member in self._sevenzipfile.list() if member.filename == name)
         except StopIteration:
-            # ZipFile and TarFile raise KeyError
-            # So for consistency, we'll also raise KeyError here
-            msg = f"{name} not found in {self.file}"
-            raise KeyError(msg) from None
+            raise ArchiveMemberNotFoundError(member=name, file=self.file) from None
 
         return _sevenzipinfo_to_member(sevenzipinfo)
 
@@ -119,13 +117,10 @@ class SevenZipArchiveFile(AbstractArchiveFile):
         destination.mkdir(parents=True, exist_ok=True)
         name = get_member_name(member)
 
-        if name in self.get_names():
+        if name in self._sevenzipfile.getnames():
             self._sevenzipfile.extract(path=destination, targets=[name], recursive=True)
         else:
-            # ZipFile and TarFile raise KeyError but SevenZipFile does nothing
-            # So for consistency's sake, we'll also raise KeyError here
-            msg = f"{name} not found in {self.file}"
-            raise KeyError(msg)
+            raise ArchiveMemberNotFoundError(member=name, file=self.file)
 
         self._sevenzipfile.reset()
         return destination / name
@@ -139,17 +134,8 @@ class SevenZipArchiveFile(AbstractArchiveFile):
         destination = realpath(destination) if destination else Path.cwd()
         destination.mkdir(parents=True, exist_ok=True)
 
-        names: set[str] = set()
         if members:
-            all_members = self._sevenzipfile.getnames()
-            for member in members:
-                if (name := get_member_name(member)) in all_members:
-                    names.add(name)
-                else:
-                    msg = f"{name} not found in {self.file}"
-                    raise KeyError(msg)
-
-        if names:
+            names = validate_members(members, available=self._sevenzipfile.getnames(), archive=self.file)
             self._sevenzipfile.extract(path=destination, targets=names, recursive=True)
         else:
             self._sevenzipfile.extractall(path=destination)
@@ -161,8 +147,7 @@ class SevenZipArchiveFile(AbstractArchiveFile):
         name = get_member_name(member).removesuffix("/")
 
         if name not in self._sevenzipfile.getnames():
-            msg = f"{name} not found in {self._file}"
-            raise KeyError(msg)
+            raise ArchiveMemberNotFoundError(member=name, file=self.file)
 
         factory = BytesIOFactory()
         self._sevenzipfile.extract(targets=[name], factory=factory)

@@ -3,8 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from .._errors import ArchiveMemberNotFoundError
 from .._models import ArchiveMember
-from .._utils import get_member_name, realpath
+from .._utils import get_member_name, realpath, validate_members
 from ._abc import AbstractArchiveFile
 
 if TYPE_CHECKING:
@@ -60,8 +61,7 @@ class RarArchiveFile(AbstractArchiveFile):
             # So for consistency's sake, we'll also raise KeyError here
             rarinfo: RarInfo = self._rarfile.getinfo(name)
         except self._NoRarEntry:
-            msg = f"{name} not found in {self._file}"
-            raise KeyError(msg) from None
+            raise ArchiveMemberNotFoundError(member=name, file=self.file) from None
 
         return _rarinfo_to_member(rarinfo)
 
@@ -83,8 +83,7 @@ class RarArchiveFile(AbstractArchiveFile):
             # So for consistency's sake, we'll also raise KeyError here
             self._rarfile.extract(member=name, path=destination, pwd=self._password)
         except self._NoRarEntry:
-            msg = f"{name} not found in {self._file}"
-            raise KeyError(msg) from None
+            raise ArchiveMemberNotFoundError(member=name, file=self.file) from None
 
         return destination / name
 
@@ -97,18 +96,12 @@ class RarArchiveFile(AbstractArchiveFile):
         destination = realpath(destination) if destination else Path.cwd()
         destination.mkdir(parents=True, exist_ok=True)
 
-        names: set[str] = set()
         if members:
-            all_members = self._rarfile.namelist()
-            for member in members:
-                name = get_member_name(member)
-                if name in all_members:
-                    names.add(name)
-                else:
-                    msg = f"{name} not found in {self._file}"
-                    raise KeyError(msg)
+            names = validate_members(members, available=self._rarfile.namelist(), archive=self.file)
+            self._rarfile.extractall(path=destination, members=names, pwd=self._password)
+        else:
+            self._rarfile.extractall(path=destination, pwd=self._password)
 
-        self._rarfile.extractall(path=destination, members=names, pwd=self._password)
         return destination
 
     def read_bytes(self, member: MemberLike) -> bytes:
@@ -122,8 +115,7 @@ class RarArchiveFile(AbstractArchiveFile):
             # So for consistency's sake, we'll also raise KeyError here
             return self._rarfile.read(name, pwd=self._password)  # type: ignore[no-any-return]
         except self._NoRarEntry:
-            msg = f"{name} not found in {self._file}"
-            raise KeyError(msg) from None
+            raise ArchiveMemberNotFoundError(member=name, file=self.file) from None
 
     def close(self) -> None:
         self._rarfile.close()

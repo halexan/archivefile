@@ -4,8 +4,9 @@ import tarfile
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from .._errors import ArchiveMemberNotFoundError
 from .._models import ArchiveMember
-from .._utils import get_member_name, realpath
+from .._utils import get_member_name, realpath, validate_members
 from ._abc import AbstractArchiveFile
 
 if TYPE_CHECKING:
@@ -33,7 +34,10 @@ class TarArchiveFile(AbstractArchiveFile):
 
     def get_member(self, member: MemberLike) -> ArchiveMember:
         name = get_member_name(member)
-        tarinfo = self._tarfile.getmember(name)
+        try:
+            tarinfo = self._tarfile.getmember(name)
+        except KeyError:
+            raise ArchiveMemberNotFoundError(member=name, file=self.file) from None
 
         return _tarinfo_to_member(tarinfo)
 
@@ -49,7 +53,10 @@ class TarArchiveFile(AbstractArchiveFile):
         destination.mkdir(parents=True, exist_ok=True)
 
         name = get_member_name(member)
-        self._tarfile.extract(member=name, path=destination)
+        try:
+            self._tarfile.extract(member=name, path=destination)
+        except KeyError:
+            raise ArchiveMemberNotFoundError(member=name, file=self.file) from None
 
         return destination / name
 
@@ -63,8 +70,8 @@ class TarArchiveFile(AbstractArchiveFile):
         destination.mkdir(parents=True, exist_ok=True)
 
         if members:
-            names = [self._tarfile.getmember(get_member_name(member)) for member in members]
-            self._tarfile.extractall(path=destination, members=names)
+            members = validate_members(members, available=self._tarfile.getnames(), archive=self.file)
+            self._tarfile.extractall(path=destination, members=members)  # type: ignore[arg-type]
         else:
             self._tarfile.extractall(path=destination)
 
@@ -72,7 +79,10 @@ class TarArchiveFile(AbstractArchiveFile):
 
     def read_bytes(self, member: MemberLike) -> bytes:
         name = get_member_name(member)
-        fileobj = self._tarfile.extractfile(name)
+        try:
+            fileobj = self._tarfile.extractfile(name)
+        except KeyError:
+            raise ArchiveMemberNotFoundError(member=name, file=self.file) from None
         if fileobj is None:  # pragma: no cover
             return b""
         return fileobj.read()

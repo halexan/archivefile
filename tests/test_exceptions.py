@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from archivefile import ArchiveFile, UnsupportedArchiveFormatError
+from archivefile import ArchiveFile, ArchiveMemberNotFoundError, UnsupportedArchiveFormatError
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -31,25 +31,35 @@ def test_unsupported_archive_format_error(tmp_path: Path) -> None:
 
 
 def test_missing_member(archive_file: ArchiveFile) -> None:
-    with pytest.raises(KeyError):
+    filename = archive_file.file.as_posix()
+    message = re.escape(f"Archive member 'non-existent.member' not found in file: {filename!r}")
+    with pytest.raises(ArchiveMemberNotFoundError, match=message):
         archive_file.get_member("non-existent.member")
 
 
 def test_missing_member_in_read_bytes(archive_file: ArchiveFile) -> None:
-    with pytest.raises(KeyError):
+    filename = archive_file.file.as_posix()
+    message = re.escape(f"Archive member 'non-existent.member' not found in file: {filename!r}")
+    with pytest.raises(ArchiveMemberNotFoundError, match=message):
         archive_file.read_bytes("non-existent.member")
 
 
 def test_missing_member_in_read_text(archive_file: ArchiveFile) -> None:
-    with pytest.raises(KeyError):
+    filename = archive_file.file.as_posix()
+    message = re.escape(f"Archive member 'non-existent.member' not found in file: {filename!r}")
+    with pytest.raises(ArchiveMemberNotFoundError, match=message):
         archive_file.read_text("non-existent.member")
 
 
 def test_missing_member_in_extract(archive_file: ArchiveFile) -> None:
-    with pytest.raises(KeyError):
+    filename = archive_file.file.as_posix()
+    message = re.escape(f"Archive member 'non-existent.member' not found in file: {filename!r}")
+    with pytest.raises(ArchiveMemberNotFoundError, match=message):
         archive_file.extract("non-existent.member")
 
 
 def test_missing_member_in_extractall(archive_file: ArchiveFile, tmp_path: Path) -> None:
-    with pytest.raises(KeyError):
+    filename = archive_file.file.as_posix()
+    message = re.escape(f"Archive member 'non-existent.member' not found in file: {filename!r}")
+    with pytest.raises(ArchiveMemberNotFoundError, match=message):
         archive_file.extractall(destination=tmp_path, members=["non-existent.member"])
