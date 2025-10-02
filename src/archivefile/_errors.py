@@ -59,3 +59,20 @@ class ArchiveMemberNotFoundError(ArchiveFileError):
     def member(self) -> str:
         """The member that was not found."""
         return self._member
+
+
+class ArchiveMemberNotAFileError(ArchiveFileError):
+    """
+    Raised when a specified member is not a file (e.g., it's a directory).
+    """
+
+    def __init__(self, *, member: str, file: StrPath) -> None:
+        self._member = member
+        filename = Path(file).as_posix()
+        message = f"Archive member {member!r} in file {filename!r} exists but is not a file."
+        super().__init__(message, file=file)
+
+    @property
+    def member(self) -> str:
+        """The member that is not a file."""
+        return self._member

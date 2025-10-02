@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
+from archivefile import ArchiveMemberNotAFileError
+
 if TYPE_CHECKING:
     from archivefile import ArchiveFile
 
@@ -44,10 +48,14 @@ def test_read_bytes_file(archive_file: ArchiveFile) -> None:
 
 
 def test_read_text_folder(archive_file: ArchiveFile) -> None:
-    member = archive_file.read_text("pyanilist-main/src/")
-    assert member == ""
+    filename = archive_file.file.as_posix()
+    message = rf"Archive member 'pyanilist-main\/src\/?' in file {filename!r} exists but is not a file."
+    with pytest.raises(ArchiveMemberNotAFileError, match=message):
+        archive_file.read_text("pyanilist-main/src/")
 
 
 def test_read_bytes_folder(archive_file: ArchiveFile) -> None:
-    member = archive_file.read_bytes("pyanilist-main/src/")
-    assert member == b""
+    filename = archive_file.file.as_posix()
+    message = rf"Archive member 'pyanilist-main\/src\/?' in file {filename!r} exists but is not a file."
+    with pytest.raises(ArchiveMemberNotAFileError, match=message):
+        archive_file.read_bytes("pyanilist-main/src/")

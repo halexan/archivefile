@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import io
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .._errors import ArchiveMemberNotFoundError
+from .._errors import ArchiveMemberNotAFileError, ArchiveMemberNotFoundError
 from .._models import ArchiveMember
 from .._utils import get_member_name, realpath, validate_members
 from ._abc import AbstractArchiveFile
@@ -107,15 +108,16 @@ class RarArchiveFile(AbstractArchiveFile):
     def read_bytes(self, member: MemberLike) -> bytes:
         name = get_member_name(member)
 
-        if name.endswith("/"):
-            return b""
-
         try:
-            # ZipFile and TarFile raise KeyError but RarFile raises it's own NoRarEntry
-            # So for consistency's sake, we'll also raise KeyError here
-            return self._rarfile.read(name, pwd=self._password)  # type: ignore[no-any-return]
+            data: bytes = self._rarfile.read(name, pwd=self._password)
         except self._NoRarEntry:
+            # `name` simply does not exist in the archive.
             raise ArchiveMemberNotFoundError(member=name, file=self.file) from None
+        except io.UnsupportedOperation:
+            # `name` is NOT a file. So we cannot read it.
+            raise ArchiveMemberNotAFileError(member=name, file=self.file) from None
+        else:
+            return data
 
     def close(self) -> None:
         self._rarfile.close()

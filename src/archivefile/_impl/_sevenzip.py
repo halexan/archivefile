@@ -4,7 +4,7 @@ import io
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .._errors import ArchiveMemberNotFoundError
+from .._errors import ArchiveMemberNotAFileError, ArchiveMemberNotFoundError
 from .._models import ArchiveMember
 from .._utils import get_member_name, realpath, validate_members
 from ._abc import AbstractArchiveFile
@@ -61,10 +61,7 @@ class BytesIOFactory(WriterFactory):
         return product
 
     def read(self, filename: str) -> bytes:
-        try:
-            return self.products[filename].read()
-        except KeyError:
-            return b""
+        return self.products[filename].read()
 
 
 def _sevenzipinfo_to_member(sevenzipinfo: FileInfo) -> ArchiveMember:
@@ -147,12 +144,20 @@ class SevenZipArchiveFile(AbstractArchiveFile):
         name = get_member_name(member).removesuffix("/")
 
         if name not in self._sevenzipfile.getnames():
+            # `name` simply does not exist in the archive.
             raise ArchiveMemberNotFoundError(member=name, file=self.file)
 
         factory = BytesIOFactory()
         self._sevenzipfile.extract(targets=[name], factory=factory)
         self._sevenzipfile.reset()
-        return factory.read(name)
+
+        try:
+            data = factory.read(name)
+        except KeyError:
+            # `name` is NOT a file. So we cannot read it.
+            raise ArchiveMemberNotAFileError(member=name, file=self.file) from None
+        else:
+            return data
 
     def close(self) -> None:
         self._sevenzipfile.close()  # type: ignore[no-untyped-call]

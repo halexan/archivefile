@@ -4,7 +4,7 @@ import tarfile
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from .._errors import ArchiveMemberNotFoundError
+from .._errors import ArchiveMemberNotAFileError, ArchiveMemberNotFoundError
 from .._models import ArchiveMember
 from .._utils import get_member_name, realpath, validate_members
 from ._abc import AbstractArchiveFile
@@ -79,12 +79,17 @@ class TarArchiveFile(AbstractArchiveFile):
 
     def read_bytes(self, member: MemberLike) -> bytes:
         name = get_member_name(member)
+
         try:
             fileobj = self._tarfile.extractfile(name)
         except KeyError:
+            # `name` simply does not exist in the archive.
             raise ArchiveMemberNotFoundError(member=name, file=self.file) from None
-        if fileobj is None:  # pragma: no cover
-            return b""
+
+        if fileobj is None:
+            # `name` is NOT a file. So we cannot read it.
+            raise ArchiveMemberNotAFileError(member=name, file=self.file) from None
+
         return fileobj.read()
 
     def close(self) -> None:

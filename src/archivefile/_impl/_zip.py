@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from zipfile import ZipFile, ZipInfo
 
-from .._errors import ArchiveMemberNotFoundError
+from .._errors import ArchiveMemberNotAFileError, ArchiveMemberNotFoundError
 from .._models import ArchiveMember
 from .._utils import get_member_name, realpath, validate_members
 from ._abc import AbstractArchiveFile
@@ -77,11 +77,17 @@ class ZipArchiveFile(AbstractArchiveFile):
         return destination
 
     def read_bytes(self, member: MemberLike) -> bytes:
-        name = get_member_name(member)
+        member = self.get_member(member)
+
+        if member.is_dir:
+            # `name` is NOT a file. So we cannot read it.
+            raise ArchiveMemberNotAFileError(member=member.name, file=self.file) from None
+
         try:
-            return self._zipfile.read(name, pwd=self._encoded_password)
+            return self._zipfile.read(member.name, pwd=self._encoded_password)
         except KeyError:
-            raise ArchiveMemberNotFoundError(member=name, file=self.file) from None
+            # `name` simply does not exist in the archive.
+            raise ArchiveMemberNotFoundError(member=member.name, file=self.file) from None
 
     def close(self) -> None:
         self._zipfile.close()
