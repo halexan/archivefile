@@ -39,7 +39,7 @@ def test_get_member_files(archive_file: ArchiveFile) -> None:
     assert archive_file.password is None
 
     member = archive_file.get_member("pyanilist-main/README.md")
-    assert member.name == "pyanilist-main/README.md"
+    assert member.name == "pyanilist-main/README.md" == str(member)
     assert member.size == 3799
     assert member.is_dir is False
     assert member.is_file is True
@@ -50,6 +50,7 @@ def test_get_member_dirs(archive_file: ArchiveFile) -> None:
     assert archive_file.password is None
 
     member = archive_file.get_member("pyanilist-main/docs/")
+    assert member.name == "pyanilist-main/docs/" == str(member)
     assert member.size == 0
     assert member.compressed_size == 0
     assert member.is_dir is True

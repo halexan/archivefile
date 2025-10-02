@@ -397,3 +397,10 @@ class ArchiveFile:
 
         """
         self._impl.close()
+
+    def __repr__(self) -> str:
+        file = self.file.as_posix()
+        cls = self.__class__.__name__
+        if self.password:
+            return f"{cls}({file!r}, password='********')"
+        return f"{cls}({file!r})"

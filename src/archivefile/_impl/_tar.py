@@ -16,11 +16,16 @@ if TYPE_CHECKING:
 
 
 def _tarinfo_to_member(tarinfo: tarfile.TarInfo, /) -> ArchiveMember:
+    is_dir = tarinfo.isdir()
+    name = tarinfo.name
+    if is_dir and not name.endswith("/"):
+        name += "/"
+
     return ArchiveMember(
-        name=tarinfo.name,
+        name=name,
         size=tarinfo.size,
         compressed_size=tarinfo.size,
-        is_dir=tarinfo.isdir(),
+        is_dir=is_dir,
         is_file=tarinfo.isfile(),
     )
 
@@ -46,7 +51,7 @@ class TarArchiveFile(AbstractArchiveFile):
             yield _tarinfo_to_member(tarinfo)
 
     def get_names(self) -> tuple[str, ...]:
-        return tuple(self._tarfile.getnames())
+        return tuple(member.name for member in self.get_members())
 
     def extract(self, member: MemberLike, /, *, destination: StrPath | None = None) -> Path:
         destination = realpath(destination) if destination else Path.cwd()

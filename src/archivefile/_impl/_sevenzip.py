@@ -44,11 +44,14 @@ class Py7zBytesIO(Py7zIO):
     def seek(self, offset: int, whence: int = 0) -> int:
         return self._buffer.seek(offset, whence)
 
-    def flush(self) -> None:
+    def flush(self) -> None:  # pragma: no cover
+        # Required by the abstract interface. Not used in this implementation.
         return self._buffer.flush()
 
-    def size(self) -> int:
+    def size(self) -> int:  # pragma: no cover
+        # Required by the abstract interface. Not used in this implementation.
         return self._buffer.getbuffer().nbytes
+
 
 
 class BytesIOFactory(WriterFactory):
@@ -65,14 +68,20 @@ class BytesIOFactory(WriterFactory):
 
 
 def _sevenzipinfo_to_member(sevenzipinfo: FileInfo, /) -> ArchiveMember:
+    is_dir = sevenzipinfo.is_directory
+    name = sevenzipinfo.filename
+
+    if is_dir and not name.endswith("/"):
+        name += "/"
+
     return ArchiveMember(
-        name=sevenzipinfo.filename,
+        name=name,
         size=sevenzipinfo.uncompressed,
-        # Sometimes sevenzip can return 0 for compressed size when there's no compression
-        # in that case we simply return the uncompressed size instead.
+        # Sometimes sevenzip can return 0 for compressed size when there's no compression.
+        # In that case we simply return the uncompressed size instead.
         compressed_size=sevenzipinfo.compressed or sevenzipinfo.uncompressed,
-        is_dir=sevenzipinfo.is_directory,
-        is_file=not sevenzipinfo.is_directory,
+        is_dir=is_dir,
+        is_file=not is_dir,
     )
 
 
@@ -80,7 +89,7 @@ class SevenZipArchiveFile(AbstractArchiveFile):
     def __init__(self, file: StrPath, /, *, password: str | None = None) -> None:
         try:
             import py7zr
-        except ModuleNotFoundError:
+        except ModuleNotFoundError:  # pragma: no cover
             filename = Path(file).as_posix()
             msg = (
                 f"Cannot open archive: {filename!r}\n"
@@ -107,7 +116,7 @@ class SevenZipArchiveFile(AbstractArchiveFile):
             yield _sevenzipinfo_to_member(sevenzipinfo)
 
     def get_names(self) -> tuple[str, ...]:
-        return tuple(self._sevenzipfile.getnames())
+        return tuple(member.name for member in self.get_members())
 
     def extract(self, member: MemberLike, /, *, destination: StrPath | None = None) -> Path:
         destination = realpath(destination) if destination else Path.cwd()

@@ -34,4 +34,6 @@ NO_RARFILE = find_spec("rarfile") is None
 )
 def archive_file(request: pytest.FixtureRequest) -> Iterator[ArchiveFile]:
     with ArchiveFile(request.param) as f:
+        assert str(f) == repr(f) == f"ArchiveFile('{request.param.resolve().as_posix()}')"
         yield f
+

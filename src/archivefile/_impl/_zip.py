@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from .._types import MemberLike, StrPath
 
 
-def _zipinfo_to_member(zipinfo: ZipInfo) -> ArchiveMember:
+def _zipinfo_to_member(zipinfo: ZipInfo, /) -> ArchiveMember:
     return ArchiveMember(
         name=zipinfo.filename,
         size=zipinfo.file_size,
@@ -26,12 +26,12 @@ def _zipinfo_to_member(zipinfo: ZipInfo) -> ArchiveMember:
 
 
 class ZipArchiveFile(AbstractArchiveFile):
-    def __init__(self, file: StrPath, *, password: str | None = None) -> None:
+    def __init__(self, file: StrPath, /, *, password: str | None = None) -> None:
         super().__init__(file, password=password)
         self._encoded_password = password.encode() if password else None
         self._zipfile = ZipFile(self.file)
 
-    def get_member(self, member: MemberLike) -> ArchiveMember:
+    def get_member(self, member: MemberLike, /) -> ArchiveMember:
         name = get_member_name(member)
         try:
             zipinfo = self._zipfile.getinfo(name)
@@ -47,7 +47,7 @@ class ZipArchiveFile(AbstractArchiveFile):
     def get_names(self) -> tuple[str, ...]:
         return tuple(self._zipfile.namelist())
 
-    def extract(self, member: MemberLike, *, destination: StrPath | None = None) -> Path:
+    def extract(self, member: MemberLike, /, *, destination: StrPath | None = None) -> Path:
         destination = realpath(destination) if destination else Path.cwd()
         destination.mkdir(parents=True, exist_ok=True)
 
@@ -76,18 +76,18 @@ class ZipArchiveFile(AbstractArchiveFile):
 
         return destination
 
-    def read_bytes(self, member: MemberLike) -> bytes:
+    def read_bytes(self, member: MemberLike, /) -> bytes:
         member = self.get_member(member)
 
         if member.is_dir:
             # `name` is NOT a file. So we cannot read it.
             raise ArchiveMemberNotAFileError(member=member.name, file=self.file) from None
 
-        try:
-            return self._zipfile.read(member.name, pwd=self._encoded_password)
-        except KeyError:
-            # `name` simply does not exist in the archive.
-            raise ArchiveMemberNotFoundError(member=member.name, file=self.file) from None
+        # At this point, `self.get_member(member)` ensures the member exists,
+        # and the `if member.is_dir` check ensures it is a regular file.
+        # Therefore, reading its contents here is safe.
+        return self._zipfile.read(member.name, pwd=self._encoded_password)
+
 
     def close(self) -> None:
         self._zipfile.close()

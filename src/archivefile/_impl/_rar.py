@@ -40,7 +40,7 @@ class RarArchiveFile(AbstractArchiveFile):
     def __init__(self, file: StrPath, /, *, password: str | None = None) -> None:
         try:
             import rarfile
-        except ModuleNotFoundError:
+        except ModuleNotFoundError:  # pragma: no cover
             filename = Path(file).as_posix()
             msg = (
                 f"Cannot open archive: {filename!r}\n"
