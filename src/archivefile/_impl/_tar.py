@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from .._types import MemberLike, StrPath
 
 
-def _tarinfo_to_member(tarinfo: tarfile.TarInfo) -> ArchiveMember:
+def _tarinfo_to_member(tarinfo: tarfile.TarInfo, /) -> ArchiveMember:
     return ArchiveMember(
         name=tarinfo.name,
         size=tarinfo.size,
@@ -26,13 +26,13 @@ def _tarinfo_to_member(tarinfo: tarfile.TarInfo) -> ArchiveMember:
 
 
 class TarArchiveFile(AbstractArchiveFile):
-    def __init__(self, file: StrPath, *, password: str | None = None) -> None:
+    def __init__(self, file: StrPath, /, *, password: str | None = None) -> None:
         super().__init__(file, password=password)
         self._tarfile = tarfile.TarFile.open(self.file)
         # https://docs.python.org/3/library/tarfile.html#supporting-older-python-versions
         self._tarfile.extraction_filter = getattr(tarfile, "data_filter", (lambda member, path: member))
 
-    def get_member(self, member: MemberLike) -> ArchiveMember:
+    def get_member(self, member: MemberLike, /) -> ArchiveMember:
         name = get_member_name(member)
         try:
             tarinfo = self._tarfile.getmember(name)
@@ -48,7 +48,7 @@ class TarArchiveFile(AbstractArchiveFile):
     def get_names(self) -> tuple[str, ...]:
         return tuple(self._tarfile.getnames())
 
-    def extract(self, member: MemberLike, *, destination: StrPath | None = None) -> Path:
+    def extract(self, member: MemberLike, /, *, destination: StrPath | None = None) -> Path:
         destination = realpath(destination) if destination else Path.cwd()
         destination.mkdir(parents=True, exist_ok=True)
 
@@ -77,7 +77,7 @@ class TarArchiveFile(AbstractArchiveFile):
 
         return destination
 
-    def read_bytes(self, member: MemberLike) -> bytes:
+    def read_bytes(self, member: MemberLike, /) -> bytes:
         name = get_member_name(member)
 
         try:

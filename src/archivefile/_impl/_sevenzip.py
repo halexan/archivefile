@@ -21,7 +21,7 @@ else:
     WriterFactory = object
 
 
-def is_7zfile(file: StrPath) -> bool:
+def is_7zfile(file: StrPath, /) -> bool:
     try:
         import py7zr
 
@@ -64,7 +64,7 @@ class BytesIOFactory(WriterFactory):
         return self.products[filename].read()
 
 
-def _sevenzipinfo_to_member(sevenzipinfo: FileInfo) -> ArchiveMember:
+def _sevenzipinfo_to_member(sevenzipinfo: FileInfo, /) -> ArchiveMember:
     return ArchiveMember(
         name=sevenzipinfo.filename,
         size=sevenzipinfo.uncompressed,
@@ -77,7 +77,7 @@ def _sevenzipinfo_to_member(sevenzipinfo: FileInfo) -> ArchiveMember:
 
 
 class SevenZipArchiveFile(AbstractArchiveFile):
-    def __init__(self, file: StrPath, *, password: str | None = None) -> None:
+    def __init__(self, file: StrPath, /, *, password: str | None = None) -> None:
         try:
             import py7zr
         except ModuleNotFoundError:
@@ -92,7 +92,7 @@ class SevenZipArchiveFile(AbstractArchiveFile):
         super().__init__(file, password=password)
         self._sevenzipfile = py7zr.SevenZipFile(self.file, password=self.password)
 
-    def get_member(self, member: MemberLike) -> ArchiveMember:
+    def get_member(self, member: MemberLike, /) -> ArchiveMember:
         name = get_member_name(member).removesuffix("/")
         try:
             # SevenZipFile doesn't have an equivalent for `get_member` like the rest, so we hand craft it instead
@@ -109,7 +109,7 @@ class SevenZipArchiveFile(AbstractArchiveFile):
     def get_names(self) -> tuple[str, ...]:
         return tuple(self._sevenzipfile.getnames())
 
-    def extract(self, member: MemberLike, *, destination: StrPath | None = None) -> Path:
+    def extract(self, member: MemberLike, /, *, destination: StrPath | None = None) -> Path:
         destination = realpath(destination) if destination else Path.cwd()
         destination.mkdir(parents=True, exist_ok=True)
         name = get_member_name(member)
@@ -140,7 +140,7 @@ class SevenZipArchiveFile(AbstractArchiveFile):
         self._sevenzipfile.reset()
         return destination
 
-    def read_bytes(self, member: MemberLike) -> bytes:
+    def read_bytes(self, member: MemberLike, /) -> bytes:
         name = get_member_name(member).removesuffix("/")
 
         if name not in self._sevenzipfile.getnames():

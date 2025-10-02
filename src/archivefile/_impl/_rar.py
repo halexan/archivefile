@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from .._types import MemberLike, StrPath
 
 
-def is_rarfile(file: StrPath) -> bool:
+def is_rarfile(file: StrPath, /) -> bool:
     try:
         import rarfile
 
@@ -26,7 +26,7 @@ def is_rarfile(file: StrPath) -> bool:
         return False
 
 
-def _rarinfo_to_member(rarinfo: RarInfo) -> ArchiveMember:
+def _rarinfo_to_member(rarinfo: RarInfo, /) -> ArchiveMember:
     return ArchiveMember(
         name=rarinfo.filename,
         size=rarinfo.file_size,
@@ -37,7 +37,7 @@ def _rarinfo_to_member(rarinfo: RarInfo) -> ArchiveMember:
 
 
 class RarArchiveFile(AbstractArchiveFile):
-    def __init__(self, file: StrPath, *, password: str | None = None) -> None:
+    def __init__(self, file: StrPath, /, *, password: str | None = None) -> None:
         try:
             import rarfile
         except ModuleNotFoundError:
@@ -54,7 +54,7 @@ class RarArchiveFile(AbstractArchiveFile):
         self._NoRarEntry = rarfile.NoRarEntry
         self._rarfile = self._RarFile(self._file)
 
-    def get_member(self, member: MemberLike) -> ArchiveMember:
+    def get_member(self, member: MemberLike, /) -> ArchiveMember:
         name = get_member_name(member)
 
         try:
@@ -73,7 +73,7 @@ class RarArchiveFile(AbstractArchiveFile):
     def get_names(self) -> tuple[str, ...]:
         return tuple(self._rarfile.namelist())
 
-    def extract(self, member: MemberLike, *, destination: StrPath | None = None) -> Path:
+    def extract(self, member: MemberLike, /, *, destination: StrPath | None = None) -> Path:
         destination = realpath(destination) if destination else Path.cwd()
         destination.mkdir(parents=True, exist_ok=True)
 
@@ -105,7 +105,7 @@ class RarArchiveFile(AbstractArchiveFile):
 
         return destination
 
-    def read_bytes(self, member: MemberLike) -> bytes:
+    def read_bytes(self, member: MemberLike, /) -> bytes:
         name = get_member_name(member)
 
         try:

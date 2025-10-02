@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class AbstractArchiveFile(abc.ABC):
-    def __init__(self, file: StrPath, *, password: str | None = None) -> None:
+    def __init__(self, file: StrPath, /, *, password: str | None = None) -> None:
         self._file = Path(file)
         self._password = password
         super().__init__()
@@ -34,7 +34,7 @@ class AbstractArchiveFile(abc.ABC):
         self.close()
 
     @abc.abstractmethod
-    def get_member(self, member: MemberLike) -> ArchiveMember: ...
+    def get_member(self, member: MemberLike, /) -> ArchiveMember: ...
 
     @abc.abstractmethod
     def get_members(self) -> Iterator[ArchiveMember]: ...
@@ -43,7 +43,7 @@ class AbstractArchiveFile(abc.ABC):
     def get_names(self) -> tuple[str, ...]: ...
 
     @abc.abstractmethod
-    def extract(self, member: MemberLike, *, destination: StrPath | None = None) -> Path: ...
+    def extract(self, member: MemberLike, /, *, destination: StrPath | None = None) -> Path: ...
 
     @abc.abstractmethod
     def extractall(
@@ -54,11 +54,12 @@ class AbstractArchiveFile(abc.ABC):
     ) -> Path: ...
 
     @abc.abstractmethod
-    def read_bytes(self, member: MemberLike) -> bytes: ...
+    def read_bytes(self, member: MemberLike, /) -> bytes: ...
 
     def read_text(
         self,
         member: MemberLike,
+        /,
         *,
         encoding: str = "utf-8",
         errors: ErrorHandler = "strict",
