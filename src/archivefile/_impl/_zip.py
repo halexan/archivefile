@@ -88,6 +88,5 @@ class ZipArchiveFile(AbstractArchiveFile):
         # Therefore, reading its contents here is safe.
         return self._zipfile.read(member.name, pwd=self._encoded_password)
 
-
     def close(self) -> None:
         self._zipfile.close()

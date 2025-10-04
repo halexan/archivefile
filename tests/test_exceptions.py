@@ -46,6 +46,7 @@ def test_missing_member(archive_file: ArchiveFile) -> None:
 
     assert exc.value.file == archive_file.file
 
+
 def test_missing_member_in_read_bytes(archive_file: ArchiveFile) -> None:
     filename = archive_file.file.as_posix()
     message = re.escape(f"Archive member 'non-existent.member' not found in file: {filename!r}")
@@ -74,6 +75,7 @@ def test_missing_member_in_extract(archive_file: ArchiveFile) -> None:
 
     assert exc.value.member == "non-existent.member"
     assert exc.value.file == archive_file.file
+
 
 def test_missing_member_in_extractall(archive_file: ArchiveFile, tmp_path: Path) -> None:
     filename = archive_file.file.as_posix()

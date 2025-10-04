@@ -98,7 +98,7 @@ class ArchiveFile:
         return self
 
     def __exit__(self, *args: object) -> None:
-        self._impl.close()
+        self.close()
 
     @property
     def file(self) -> Path:
@@ -398,7 +398,7 @@ class ArchiveFile:
         """
         self._impl.close()
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         file = self.file.as_posix()
         cls = self.__class__.__name__
         if self.password:

@@ -53,7 +53,6 @@ class Py7zBytesIO(Py7zIO):
         return self._buffer.getbuffer().nbytes
 
 
-
 class BytesIOFactory(WriterFactory):
     def __init__(self) -> None:
         self.products: dict[str, Py7zBytesIO] = {}

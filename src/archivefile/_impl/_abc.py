@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
 
-    from typing_extensions import Self
-
     from .._models import ArchiveMember
     from .._types import ErrorHandler, MemberLike, StrPath
 
@@ -26,12 +24,6 @@ class AbstractArchiveFile(abc.ABC):
     @property
     def password(self) -> str | None:
         return self._password
-
-    def __enter__(self) -> Self:
-        return self
-
-    def __exit__(self, *args: object) -> None:
-        self.close()
 
     @abc.abstractmethod
     def get_member(self, member: MemberLike, /) -> ArchiveMember: ...
@@ -69,7 +61,7 @@ class AbstractArchiveFile(abc.ABC):
     @abc.abstractmethod
     def close(self) -> None: ...
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         file = self.file.as_posix()
         cls = self.__class__.__name__
         if self.password:
