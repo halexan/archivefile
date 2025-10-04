@@ -62,11 +62,11 @@ class ArchiveFile:
 
         Raises
         ------
-        NotImplementedError
+        UnsupportedArchiveFormatError
             Raised if the archive format is unsupported
 
-        References
-        ----------
+        Notes
+        -----
         ArchiveFile currently supports the following:
 
         - [`ZipFile`][zipfile.ZipFile]

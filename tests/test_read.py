@@ -53,7 +53,7 @@ def test_read_text_folder(archive_file: ArchiveFile) -> None:
     with pytest.raises(ArchiveMemberNotAFileError, match=message) as exc:
         archive_file.read_text("pyanilist-main/src/")
 
-    assert exc.value.member in ("pyanilist-main/src", "pyanilist-main/src/")
+    assert exc.value.member == "pyanilist-main/src/"
     assert exc.value.file == archive_file.file
 
 
@@ -63,5 +63,5 @@ def test_read_bytes_folder(archive_file: ArchiveFile) -> None:
     with pytest.raises(ArchiveMemberNotAFileError, match=message) as exc:
         archive_file.read_bytes("pyanilist-main/src/")
 
-    assert exc.value.member in ("pyanilist-main/src", "pyanilist-main/src/")
+    assert exc.value.member == "pyanilist-main/src/"
     assert exc.value.file == archive_file.file

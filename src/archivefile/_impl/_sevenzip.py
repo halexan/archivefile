@@ -101,9 +101,11 @@ class SevenZipArchiveFile(AbstractArchiveFile):
         self._sevenzipfile = py7zr.SevenZipFile(self.file, password=self.password)
 
     def get_member(self, member: MemberLike, /) -> ArchiveMember:
+        # TODO: Replace this implementation with SevenZipFile.getinfo
+        # once py7zr releases a version that fixes this bug:
+        # https://github.com/miurahr/py7zr/issues/675
         name = get_member_name(member).removesuffix("/")
         try:
-            # SevenZipFile doesn't have an equivalent for `get_member` like the rest, so we hand craft it instead
             sevenzipinfo: FileInfo = next(member for member in self._sevenzipfile.list() if member.filename == name)
         except StopIteration:
             raise ArchiveMemberNotFoundError(member=name, file=self.file) from None
@@ -149,18 +151,23 @@ class SevenZipArchiveFile(AbstractArchiveFile):
         return destination
 
     def read_bytes(self, member: MemberLike, /) -> bytes:
-        name = get_member_name(member).removesuffix("/")
+        name = get_member_name(member)
 
-        if name not in self._sevenzipfile.getnames():
+        # SevenZipFile listings do not preserve trailing `/`,
+        # so we normalize the name for lookup while keeping
+        # the original for clearer error messages.
+        normname = name.removesuffix("/")
+
+        if normname not in self._sevenzipfile.getnames():
             # `name` simply does not exist in the archive.
-            raise ArchiveMemberNotFoundError(member=name, file=self.file)
+            raise ArchiveMemberNotFoundError(member=normname, file=self.file)
 
         factory = BytesIOFactory()
-        self._sevenzipfile.extract(targets=[name], factory=factory)
+        self._sevenzipfile.extract(targets=[normname], factory=factory)
         self._sevenzipfile.reset()
 
         try:
-            data = factory.read(name)
+            data = factory.read(normname)
         except KeyError:
             # `name` is NOT a file. So we cannot read it.
             raise ArchiveMemberNotAFileError(member=name, file=self.file) from None
