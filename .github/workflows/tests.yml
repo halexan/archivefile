@@ -50,7 +50,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Run tests without extras
-        run: uv run coverage run -m pytest -vv
+        run: uv run pytest -vv
 
       - name: Run tests with extras
         run: uv run --all-extras coverage run -m pytest -vv
