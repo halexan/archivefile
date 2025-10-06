@@ -49,7 +49,7 @@ def test_read_bytes_file(archive_file: ArchiveFile) -> None:
 
 def test_read_text_folder(archive_file: ArchiveFile) -> None:
     filename = archive_file.file.as_posix()
-    message = rf"Archive member 'pyanilist-main\/src\/?' in file {filename!r} exists but is not a file."
+    message = rf"Archive member 'pyanilist-main/src/' in file {filename!r} exists but is not a file."
     with pytest.raises(ArchiveMemberNotAFileError, match=message) as exc:
         archive_file.read_text("pyanilist-main/src/")
 
@@ -59,7 +59,7 @@ def test_read_text_folder(archive_file: ArchiveFile) -> None:
 
 def test_read_bytes_folder(archive_file: ArchiveFile) -> None:
     filename = archive_file.file.as_posix()
-    message = rf"Archive member 'pyanilist-main\/src\/?' in file {filename!r} exists but is not a file."
+    message = rf"Archive member 'pyanilist-main/src/' in file {filename!r} exists but is not a file."
     with pytest.raises(ArchiveMemberNotAFileError, match=message) as exc:
         archive_file.read_bytes("pyanilist-main/src/")
 

@@ -60,9 +60,9 @@ def validate_members(requested: Iterable[MemberLike], /, *, available: Iterable[
     ----------
     requested : Iterable[str]
         File names requested by the user. May contain duplicates.
-        Order will be preserved. If None or empty, no members are returned.
+        Order will be preserved.
     available : Iterable[str]
-        Set of all available member names in the archive (already normalized).
+        All available member names in the archive.
     archive : str
         Path to the archive file, used in error reporting.
 

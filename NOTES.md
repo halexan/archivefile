@@ -79,7 +79,7 @@ The goal is for this code to pass consistently,
 no matter which archive format is used. This is achieved by:
 
 1. Normalizing lookups according to the preferences of the underlying archive format.
-   - For example, `/` is stripped for SevenZipFile and TarFile, but kept for ZipFile.
+   - For example, `/` is stripped for SevenZipFile, but kept for ZipFile.
 
 2. Preserving trailing `/` in listings so that checks like:
 
@@ -90,6 +90,5 @@ no matter which archive format is used. This is achieved by:
    work reliably. For formats that discard the `/` (TarFile and SevenZipFile), we add it back in.
 
 Not doing this would force users to know the details of the
-underlying archive format just to perform a simple check
-like `"foo/bar/" in archive_file.get_names()`, which would be
-tedious and error-prone.
+underlying archive format just to perform a simple check 
+which would be tedious and error-prone.
