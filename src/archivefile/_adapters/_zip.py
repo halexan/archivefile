@@ -279,8 +279,9 @@ class ZipFileAdapter(BaseArchiveAdapter):
         files = dir.rglob(glob) if recursive else dir.glob(glob)
 
         for file in files:
-            arcname = file.relative_to(root)
-            self.write(file, arcname=arcname)
+            if file.is_file():
+                arcname = file.relative_to(root)
+                self.write(file, arcname=arcname)
 
     def close(self) -> None:
         self._zipfile.close()
